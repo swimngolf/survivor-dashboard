@@ -113,12 +113,26 @@ tr:hover td { background: #1c2128; }
     <h2>Today's Pending Picks</h2>
     <table id="picksTable">
       <thead>
-        <tr><th>Rank</th><th>Member</th><th>Streak</th><th>Date</th><th>League</th><th>Game</th><th>Pick</th><th>Outcome</th></tr>
+        <tr><th>Rank</th><th>Member</th><th>Streak</th><th>League</th><th>Game</th><th>Pick</th><th>Outcome</th></tr>
       </thead>
       <tbody id="picksBody"></tbody>
     </table>
     <div class="empty-state" id="emptyPicks" style="display:none">
-      <p>No picks data for this date yet.</p>
+      <p>No same-day picks for this date.</p>
+    </div>
+  </div>
+
+  <!-- Future Picks -->
+  <div class="panel" style="margin-bottom:24px">
+    <h2>Locked-In Future Picks</h2>
+    <table id="futureTable">
+      <thead>
+        <tr><th>Rank</th><th>Member</th><th>Streak</th><th>Date</th><th>League</th><th>Game</th><th>Pick</th></tr>
+      </thead>
+      <tbody id="futureBody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyFuture" style="display:none">
+      <p>No future picks locked in.</p>
     </div>
   </div>
 
@@ -276,14 +290,20 @@ function render() {
     return;
   }
   const dayData = db.days[date];
-  const results = dayData?.results || [];
+  const allResults = dayData?.results || [];
   const outcomes = db.outcomes[date] || {};
+
+  // Split into same-day picks vs future picks
+  // Parse the scrape date (date key like "2026-04-02") to match against pick dates (like "Apr 2, 2026")
+  const scrapeDate = date; // "2026-04-02"
+  const results = allResults.filter(r => pickDateMatchesScrapeDate(r.date, scrapeDate));
+  const futurePicks = allResults.filter(r => !pickDateMatchesScrapeDate(r.date, scrapeDate));
 
   document.getElementById('currentDate').textContent = formatDate(date);
 
-  // Stats
+  // Stats (today's picks only)
   document.getElementById('statTotal').textContent = results.length;
-  document.getElementById('statScope').textContent = `From top ${dayData?.totalRows || 200}`;
+  document.getElementById('statScope').textContent = `${results.length} today, ${futurePicks.length} future`;
 
   const tally = buildTally(results);
   const topPick = tally[0];
@@ -315,6 +335,7 @@ function render() {
   renderLeagueChart(results);
   renderGameChart(results);
   renderPicksTable(results, outcomes);
+  renderFutureTable(futurePicks);
   renderVolumeChart();
   renderRecurringTable();
   renderOutcomeHistory();
@@ -334,6 +355,16 @@ function formatDate(d) {
   const parts = d.split('-');
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${months[parseInt(parts[1])-1]} ${parseInt(parts[2])}, ${parts[0]}`;
+}
+
+// Checks if a pick date string like "Apr 2, 2026" matches a scrape date like "2026-04-02"
+function pickDateMatchesScrapeDate(pickDate, scrapeDate) {
+  if (!pickDate || !scrapeDate) return false;
+  const months = { Jan:'01', Feb:'02', Mar:'03', Apr:'04', May:'05', Jun:'06', Jul:'07', Aug:'08', Sep:'09', Oct:'10', Nov:'11', Dec:'12' };
+  const m = pickDate.match(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d+),\s+(\d+)/);
+  if (!m) return false;
+  const normalized = `${m[3]}-${months[m[1]]}-${m[2].padStart(2, '0')}`;
+  return normalized === scrapeDate;
 }
 
 const LEAGUE_COLORS = { NHL: '#58a6ff', NBA: '#d29922', MLB: '#3fb950', NCAAB: '#bc8cff' };
@@ -413,11 +444,29 @@ function renderPicksTable(results, outcomes) {
       <td>${r.rank}</td>
       <td><strong>${r.member}</strong></td>
       <td><span class="streak-indicator"><span class="streak-dot ${parseInt(r.streak)>=8?'hot':parseInt(r.streak)>=6?'warm':'cold'}"></span>${r.streak}</span></td>
-      <td>${r.date}</td>
       <td><span class="badge ${leagueClass}">${r.league}</span></td>
       <td>${r.game}</td>
       <td><strong>${r.pick}</strong></td>
       <td><span class="badge ${badgeClass}">${outcome === 'pending' ? 'Pending' : outcome}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderFutureTable(futurePicks) {
+  const tbody = document.getElementById('futureBody');
+  const empty = document.getElementById('emptyFuture');
+  if (futurePicks.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  tbody.innerHTML = futurePicks.map(r => {
+    const leagueClass = r.league.toLowerCase();
+    return `<tr>
+      <td>${r.rank}</td>
+      <td><strong>${r.member}</strong></td>
+      <td><span class="streak-indicator"><span class="streak-dot ${parseInt(r.streak)>=8?'hot':parseInt(r.streak)>=6?'warm':'cold'}"></span>${r.streak}</span></td>
+      <td>${r.date}</td>
+      <td><span class="badge ${leagueClass}">${r.league}</span></td>
+      <td>${r.game}</td>
+      <td><strong>${r.pick}</strong></td>
     </tr>`;
   }).join('');
 }
