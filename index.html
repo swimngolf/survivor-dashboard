@@ -1336,12 +1336,12 @@ async function fetchLiveScores() {
   const todayResults = allResults.filter(r => pickDateMatchesScrapeDate(r.date, scrapeDate));
   const leaguesNeeded = [...new Set(todayResults.map(r => r.league))];
 
-  // Build a map of games our picks care about
-  const picksByGame = {};
+  // Build a map of pick counts per game (same source as Pick Distribution)
+  const picksPerGame = {};
   todayResults.forEach(r => {
-    const key = r.game.toLowerCase();
-    if (!picksByGame[key]) picksByGame[key] = [];
-    picksByGame[key].push(r);
+    const key = r.game;
+    if (!picksPerGame[key]) picksPerGame[key] = 0;
+    picksPerGame[key]++;
   });
 
   const allGames = [];
@@ -1360,7 +1360,6 @@ async function fetchLiveScores() {
         const clock = ev.status?.displayClock || '';
         const period = ev.status?.period || 0;
 
-        // Match to our picks by team names
         const homeName = home?.team?.shortDisplayName || home?.team?.displayName || '';
         const awayName = away?.team?.shortDisplayName || away?.team?.displayName || '';
         const homeAbbr = home?.team?.abbreviation || '';
@@ -1370,21 +1369,21 @@ async function fetchLiveScores() {
         const homeWinner = parseInt(homeScore) > parseInt(awayScore);
         const awayWinner = parseInt(awayScore) > parseInt(homeScore);
 
-        // Check if any of our picks match this game
-        const matchedPicks = [];
-        Object.entries(picksByGame).forEach(([gameKey, picks]) => {
-          const gk = gameKey.toLowerCase();
-          if (gk.includes(homeName.toLowerCase()) || gk.includes(awayName.toLowerCase()) ||
-              gk.includes(homeAbbr.toLowerCase()) || gk.includes(awayAbbr.toLowerCase())) {
-            matchedPicks.push(...picks);
+        // Match ESPN game to our game names and sum pick counts
+        let pickCount = 0;
+        Object.entries(picksPerGame).forEach(([gameName, count]) => {
+          const gn = gameName.toLowerCase();
+          if (gn.includes(homeName.toLowerCase()) || gn.includes(awayName.toLowerCase()) ||
+              gn.includes(homeAbbr.toLowerCase()) || gn.includes(awayAbbr.toLowerCase())) {
+            pickCount += count;
           }
         });
 
-        if (matchedPicks.length > 0) {
+        if (pickCount > 0) {
           allGames.push({
             league, homeName, awayName, homeAbbr, awayAbbr,
             homeScore, awayScore, homeWinner, awayWinner,
-            status, detail, clock, period, picks: matchedPicks
+            status, detail, clock, period, pickCount
           });
         }
       });
@@ -1432,7 +1431,7 @@ function renderLiveScores(games) {
       <div class="sc-team ${g.homeWinner && g.status==='STATUS_FINAL' ? 'winner' : ''}">
         <span class="name">${g.homeName}</span><span class="score">${g.homeScore}</span>
       </div>
-      <div style="margin-top:6px;padding-top:6px;border-top:1px solid #30363d;font-size:11px;color:#8b949e">${g.picks.length} pick${g.picks.length>1?'s':''} on this game</div>
+      <div style="margin-top:6px;padding-top:6px;border-top:1px solid #30363d;font-size:11px;color:#8b949e">${g.pickCount} pick${g.pickCount>1?'s':''} on this game</div>
     </div>`;
   }).join('');
 
