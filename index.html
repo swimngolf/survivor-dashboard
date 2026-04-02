@@ -963,7 +963,7 @@ function render() {
   // Last refreshed timestamp (baked in by scraper, not browser time)
   const refreshEl = document.getElementById('lastRefreshed');
   if (db.meta?.lastUpdated) {
-    refreshEl.textContent = 'Last refreshed: ' + db.meta.lastUpdated;
+    refreshEl.textContent = 'Picks last updated: ' + db.meta.lastUpdated;
   } else {
     refreshEl.textContent = '';
   }
