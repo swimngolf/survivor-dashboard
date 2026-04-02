@@ -1330,19 +1330,31 @@ async function fetchLiveScores() {
   const dayData = db.days[date];
   if (!dayData) return;
 
-  // Get unique leagues from today's picks
+  // Build pick counts per game from ALL results (no date filtering here)
   const allResults = dayData.results || [];
-  const scrapeDate = date;
-  const todayResults = allResults.filter(r => pickDateMatchesScrapeDate(r.date, scrapeDate));
-  const leaguesNeeded = [...new Set(todayResults.map(r => r.league))];
-
-  // Build a map of pick counts per game (same source as Pick Distribution)
   const picksPerGame = {};
-  todayResults.forEach(r => {
-    const key = r.game;
-    if (!picksPerGame[key]) picksPerGame[key] = 0;
-    picksPerGame[key]++;
+  allResults.forEach(r => {
+    if (!picksPerGame[r.game]) picksPerGame[r.game] = { count: 0, league: r.league };
+    picksPerGame[r.game].count++;
   });
+
+  // Get all unique leagues
+  const leaguesNeeded = [...new Set(allResults.map(r => r.league))];
+
+  // Helper: check if an ESPN team partially matches any word in our game names
+  function findPickCount(espnHome, espnAway, league) {
+    const homeWords = espnHome.toLowerCase().split(/[\s.]+/).filter(w => w.length > 2);
+    const awayWords = espnAway.toLowerCase().split(/[\s.]+/).filter(w => w.length > 2);
+    let total = 0;
+    Object.entries(picksPerGame).forEach(([gameName, info]) => {
+      if (info.league !== league) return;
+      const gn = gameName.toLowerCase();
+      const homeMatch = homeWords.some(w => gn.includes(w));
+      const awayMatch = awayWords.some(w => gn.includes(w));
+      if (homeMatch || awayMatch) total += info.count;
+    });
+    return total;
+  }
 
   const allGames = [];
   for (const league of leaguesNeeded) {
@@ -1357,13 +1369,9 @@ async function fetchLiveScores() {
         const away = competitors.find(c => c.homeAway === 'away');
         const status = ev.status?.type?.name || '';
         const detail = ev.status?.type?.shortDetail || ev.status?.type?.detail || '';
-        const clock = ev.status?.displayClock || '';
-        const period = ev.status?.period || 0;
 
-        const homeName = home?.team?.shortDisplayName || home?.team?.displayName || '';
-        const awayName = away?.team?.shortDisplayName || away?.team?.displayName || '';
-        const homeAbbr = home?.team?.abbreviation || '';
-        const awayAbbr = away?.team?.abbreviation || '';
+        const homeName = home?.team?.shortDisplayName || '';
+        const awayName = away?.team?.shortDisplayName || '';
         const homeLoc = home?.team?.location || '';
         const awayLoc = away?.team?.location || '';
         const homeScore = home?.score || '0';
@@ -1371,31 +1379,23 @@ async function fetchLiveScores() {
         const homeWinner = parseInt(homeScore) > parseInt(awayScore);
         const awayWinner = parseInt(awayScore) > parseInt(homeScore);
 
-        // Match ESPN game to our game names using location names
-        // Require BOTH teams in the game name to match to avoid false positives
-        let pickCount = 0;
-        Object.entries(picksPerGame).forEach(([gameName, count]) => {
-          const gn = gameName.toLowerCase();
-          const matchesHome = gn.includes(homeLoc.toLowerCase()) || (homeLoc.length > 3 && gn.includes(homeName.toLowerCase()));
-          const matchesAway = gn.includes(awayLoc.toLowerCase()) || (awayLoc.length > 3 && gn.includes(awayName.toLowerCase()));
-          if (matchesHome && matchesAway) {
-            pickCount += count;
-          }
-        });
+        const pickCount = findPickCount(homeLoc + ' ' + homeName, awayLoc + ' ' + awayName, league);
 
         if (pickCount > 0) {
           allGames.push({
-            league, homeName, awayName, homeAbbr, awayAbbr,
+            league, homeName, awayName,
+            homeAbbr: home?.team?.abbreviation || '',
+            awayAbbr: away?.team?.abbreviation || '',
             homeScore, awayScore, homeWinner, awayWinner,
-            status, detail, clock, period, pickCount
+            status, detail, pickCount
           });
         }
       });
     } catch (e) { console.log('ESPN fetch error for ' + league + ':', e); }
   }
 
-  renderLiveScores(allGames);
   cachedGames = allGames;
+  renderLiveScores(allGames);
 }
 
 function renderLiveScores(games) {
