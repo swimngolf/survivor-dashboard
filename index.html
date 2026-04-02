@@ -60,6 +60,19 @@ tr:hover td { background: #1c2128; }
 .empty-state p { margin-top: 8px; font-size: 13px; }
 #loadStatus { position: fixed; bottom: 20px; right: 20px; background: #21262d; border: 1px solid #30363d; padding: 8px 16px; border-radius: 6px; font-size: 12px; color: #8b949e; display: none; }
 
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.score-card { background: #1c2128; border: 1px solid #30363d; border-radius: 8px; padding: 12px 14px; }
+.score-card .sc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.score-card .sc-status { font-size: 11px; font-weight: 600; }
+.score-card .sc-status.live { color: #f85149; }
+.score-card .sc-status.final { color: #8b949e; }
+.score-card .sc-status.pre { color: #d29922; }
+.score-card .sc-team { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 13px; }
+.score-card .sc-team .name { color: #c9d1d9; }
+.score-card .sc-team .score { font-weight: 700; color: #f0f6fc; min-width: 28px; text-align: right; }
+.score-card .sc-team.winner .name { color: #f0f6fc; font-weight: 600; }
+.score-card .sc-pick-tag { margin-top: 6px; padding-top: 6px; border-top: 1px solid #30363d; font-size: 11px; color: #58a6ff; }
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .header { flex-direction: column; gap: 12px; padding: 16px; }
@@ -113,6 +126,13 @@ tr:hover td { background: #1c2128; }
     <div class="stat-card"><div class="label">Games Targeted</div><div class="value yellow" id="statGames">--</div><div class="sub" id="statLeagues"></div></div>
     <div class="stat-card"><div class="label">Highest Streak Pending</div><div class="value green" id="statTopStreak">--</div><div class="sub" id="statTopStreakSub"></div></div>
     <div class="stat-card"><div class="label">Historical Win Rate</div><div class="value" id="statWinRate">--</div><div class="sub" id="statWinRateSub">across all tracked days</div></div>
+  </div>
+
+  <!-- Live Scores -->
+  <div class="panel" style="margin-bottom:24px">
+    <h2>Live Scores <span id="liveIndicator" style="display:inline-block;width:8px;height:8px;background:#3fb950;border-radius:50%;margin-left:6px;animation:pulse 2s infinite"></span> <span style="font-size:11px;color:#8b949e;font-weight:400;margin-left:8px" id="liveTimer">Updates every 30s</span></h2>
+    <div id="liveScores" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+    <div class="empty-state" id="emptyScores" style="display:none"><p>No games in progress right now.</p></div>
   </div>
 
   <!-- Charts Row -->
@@ -1225,6 +1245,117 @@ function renderWinRateChart() {
     }
   });
 }
+
+// ============================================================
+// LIVE SCORES via ESPN API
+// ============================================================
+const ESPN_ENDPOINTS = {
+  NHL: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+  NBA: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+  MLB: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
+  NCAAB: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'
+};
+
+async function fetchLiveScores() {
+  const date = getCurrentDate();
+  const dayData = db.days[date];
+  if (!dayData) return;
+
+  // Get unique leagues from today's picks
+  const allResults = dayData.results || [];
+  const scrapeDate = date;
+  const todayResults = allResults.filter(r => pickDateMatchesScrapeDate(r.date, scrapeDate));
+  const leaguesNeeded = [...new Set(todayResults.map(r => r.league))];
+
+  // Build a map of games our picks care about
+  const picksByGame = {};
+  todayResults.forEach(r => {
+    const key = r.game.toLowerCase();
+    if (!picksByGame[key]) picksByGame[key] = [];
+    picksByGame[key].push(r);
+  });
+
+  const allGames = [];
+  for (const league of leaguesNeeded) {
+    const url = ESPN_ENDPOINTS[league];
+    if (!url) continue;
+    try {
+      const resp = await fetch(url);
+      const data = await resp.json();
+      (data.events || []).forEach(ev => {
+        const competitors = ev.competitions?.[0]?.competitors || [];
+        const home = competitors.find(c => c.homeAway === 'home');
+        const away = competitors.find(c => c.homeAway === 'away');
+        const status = ev.status?.type?.name || '';
+        const detail = ev.status?.type?.shortDetail || ev.status?.type?.detail || '';
+        const clock = ev.status?.displayClock || '';
+        const period = ev.status?.period || 0;
+
+        // Match to our picks by team names
+        const homeName = home?.team?.shortDisplayName || home?.team?.displayName || '';
+        const awayName = away?.team?.shortDisplayName || away?.team?.displayName || '';
+        const homeAbbr = home?.team?.abbreviation || '';
+        const awayAbbr = away?.team?.abbreviation || '';
+        const homeScore = home?.score || '0';
+        const awayScore = away?.score || '0';
+        const homeWinner = parseInt(homeScore) > parseInt(awayScore);
+        const awayWinner = parseInt(awayScore) > parseInt(homeScore);
+
+        // Check if any of our picks match this game
+        const matchedPicks = [];
+        Object.entries(picksByGame).forEach(([gameKey, picks]) => {
+          const gk = gameKey.toLowerCase();
+          if (gk.includes(homeName.toLowerCase()) || gk.includes(awayName.toLowerCase()) ||
+              gk.includes(homeAbbr.toLowerCase()) || gk.includes(awayAbbr.toLowerCase())) {
+            matchedPicks.push(...picks);
+          }
+        });
+
+        if (matchedPicks.length > 0) {
+          allGames.push({
+            league, homeName, awayName, homeAbbr, awayAbbr,
+            homeScore, awayScore, homeWinner, awayWinner,
+            status, detail, clock, period, picks: matchedPicks
+          });
+        }
+      });
+    } catch (e) { console.log('ESPN fetch error for ' + league + ':', e); }
+  }
+
+  renderLiveScores(allGames);
+}
+
+function renderLiveScores(games) {
+  const container = document.getElementById('liveScores');
+  const empty = document.getElementById('emptyScores');
+  if (games.length === 0) { container.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  container.innerHTML = games.map(g => {
+    const statusClass = g.status === 'STATUS_IN_PROGRESS' ? 'live' : g.status === 'STATUS_FINAL' ? 'final' : 'pre';
+    const statusText = g.status === 'STATUS_IN_PROGRESS' ? g.detail : g.status === 'STATUS_FINAL' ? 'Final' : g.detail || 'Scheduled';
+    const pickTags = g.picks.map(p => `${p.member}: ${p.pick}`).join(' | ');
+    return `<div class="score-card">
+      <div class="sc-header">
+        <span class="badge ${g.league.toLowerCase()}">${g.league}</span>
+        <span class="sc-status ${statusClass}">${statusText}</span>
+      </div>
+      <div class="sc-team ${g.awayWinner && g.status==='STATUS_FINAL' ? 'winner' : ''}">
+        <span class="name">${g.awayName}</span><span class="score">${g.awayScore}</span>
+      </div>
+      <div class="sc-team ${g.homeWinner && g.status==='STATUS_FINAL' ? 'winner' : ''}">
+        <span class="name">${g.homeName}</span><span class="score">${g.homeScore}</span>
+      </div>
+      <div class="sc-pick-tag">${g.picks.length} pick${g.picks.length>1?'s':''}: ${pickTags.length > 80 ? pickTags.substring(0,80)+'...' : pickTags}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('liveTimer').textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+// Fetch scores on load and every 30 seconds
+fetchLiveScores();
+setInterval(fetchLiveScores, 30000);
 
 // Boot
 render();
