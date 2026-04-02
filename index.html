@@ -225,7 +225,7 @@ function seedData() {
     Object.keys(SEED_DATA.outcomes || {}).forEach(date => {
       db.outcomes[date] = SEED_DATA.outcomes[date];
     });
-    db.meta.lastUpdated = new Date().toISOString();
+    db.meta.lastUpdated = SEED_DATA.meta?.lastUpdated || db.meta.lastUpdated;
     saveDB(db);
   }
   return db;
@@ -873,7 +873,10 @@ const SEED_DATA = {
       "totalRows": 200
     }
   },
-  "outcomes": {}
+  "outcomes": {},
+  "meta": {
+    "lastUpdated": "Apr 2, 2026 at 1:48 PM"
+  }
 };
 
 // ============================================================
@@ -918,13 +921,12 @@ function render() {
 
   document.getElementById('currentDate').textContent = formatDate(date);
 
-  // Last refreshed timestamp
+  // Last refreshed timestamp (baked in by scraper, not browser time)
   const refreshEl = document.getElementById('lastRefreshed');
   if (db.meta?.lastUpdated) {
-    const d = new Date(db.meta.lastUpdated);
-    refreshEl.textContent = 'Last refreshed: ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    refreshEl.textContent = 'Last refreshed: ' + db.meta.lastUpdated;
   } else {
-    refreshEl.textContent = 'Last refreshed: ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    refreshEl.textContent = '';
   }
 
   // Stats (today's picks only)
