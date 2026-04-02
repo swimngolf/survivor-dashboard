@@ -130,9 +130,21 @@ tr:hover td { background: #1c2128; }
 
   <!-- Live Scores -->
   <div class="panel" style="margin-bottom:24px">
-    <h2>Live Scores <span id="liveIndicator" style="display:inline-block;width:8px;height:8px;background:#3fb950;border-radius:50%;margin-left:6px;animation:pulse 2s infinite"></span> <span style="font-size:11px;color:#8b949e;font-weight:400;margin-left:8px" id="liveTimer">Updates every 30s</span></h2>
-    <div id="liveScores" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
-    <div class="empty-state" id="emptyScores" style="display:none"><p>No games in progress right now.</p></div>
+    <h2 style="cursor:pointer;user-select:none" onclick="toggleLiveScores()">
+      Live Scores <span id="liveIndicator" style="display:inline-block;width:8px;height:8px;background:#3fb950;border-radius:50%;margin-left:6px;animation:pulse 2s infinite"></span>
+      <span style="font-size:11px;color:#8b949e;font-weight:400;margin-left:8px" id="liveTimer">Updates every 30s</span>
+      <span id="liveToggle" style="float:right;font-size:13px;color:#8b949e">&#9660;</span>
+    </h2>
+    <div id="liveScoresWrapper">
+      <div style="display:flex;gap:8px;margin:12px 0 8px 0">
+        <button class="tab active" id="tabLive" onclick="setScoreFilter('live')">Live Now</button>
+        <button class="tab" id="tabFinal" onclick="setScoreFilter('final')">Final</button>
+        <button class="tab" id="tabPre" onclick="setScoreFilter('pre')">Upcoming</button>
+        <button class="tab" id="tabAll" onclick="setScoreFilter('all')">All</button>
+      </div>
+      <div id="liveScores" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+      <div class="empty-state" id="emptyScores" style="display:none"><p>No matching games right now.</p></div>
+    </div>
   </div>
 
   <!-- Charts Row -->
@@ -1256,6 +1268,23 @@ const ESPN_ENDPOINTS = {
   NCAAB: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'
 };
 
+let liveCollapsed = false;
+let scoreFilter = 'live';
+let cachedGames = [];
+
+function toggleLiveScores() {
+  liveCollapsed = !liveCollapsed;
+  document.getElementById('liveScoresWrapper').style.display = liveCollapsed ? 'none' : 'block';
+  document.getElementById('liveToggle').innerHTML = liveCollapsed ? '&#9654;' : '&#9660;';
+}
+
+function setScoreFilter(f) {
+  scoreFilter = f;
+  ['tabLive','tabFinal','tabPre','tabAll'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById('tab' + f.charAt(0).toUpperCase() + f.slice(1)).classList.add('active');
+  renderLiveScores(cachedGames);
+}
+
 async function fetchLiveScores() {
   const date = getCurrentDate();
   const dayData = db.days[date];
@@ -1323,15 +1352,32 @@ async function fetchLiveScores() {
   }
 
   renderLiveScores(allGames);
+  cachedGames = allGames;
 }
 
 function renderLiveScores(games) {
   const container = document.getElementById('liveScores');
   const empty = document.getElementById('emptyScores');
-  if (games.length === 0) { container.innerHTML = ''; empty.style.display = 'block'; return; }
+
+  // Filter based on selected tab
+  let filtered = games;
+  if (scoreFilter === 'live') {
+    filtered = games.filter(g => g.status === 'STATUS_IN_PROGRESS');
+  } else if (scoreFilter === 'final') {
+    filtered = games.filter(g => g.status === 'STATUS_FINAL');
+  } else if (scoreFilter === 'pre') {
+    filtered = games.filter(g => g.status !== 'STATUS_IN_PROGRESS' && g.status !== 'STATUS_FINAL');
+  }
+
+  // Update live indicator
+  const liveCount = games.filter(g => g.status === 'STATUS_IN_PROGRESS').length;
+  document.getElementById('liveIndicator').style.background = liveCount > 0 ? '#3fb950' : '#8b949e';
+  document.getElementById('liveIndicator').style.animation = liveCount > 0 ? 'pulse 2s infinite' : 'none';
+
+  if (filtered.length === 0) { container.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  container.innerHTML = games.map(g => {
+  container.innerHTML = filtered.map(g => {
     const statusClass = g.status === 'STATUS_IN_PROGRESS' ? 'live' : g.status === 'STATUS_FINAL' ? 'final' : 'pre';
     const statusText = g.status === 'STATUS_IN_PROGRESS' ? g.detail : g.status === 'STATUS_FINAL' ? 'Final' : g.detail || 'Scheduled';
     const pickTags = g.picks.map(p => `${p.member}: ${p.pick}`).join(' | ');
