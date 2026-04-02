@@ -1432,7 +1432,6 @@ function renderLiveScores(games) {
       <div class="sc-team ${g.homeWinner && g.status==='STATUS_FINAL' ? 'winner' : ''}">
         <span class="name">${g.homeName}</span><span class="score">${g.homeScore}</span>
       </div>
-      <div class="sc-pick-tag">${g.picks.length} pick${g.picks.length>1?'s':''}: ${pickTags.length > 80 ? pickTags.substring(0,80)+'...' : pickTags}</div>
     </div>`;
   }).join('');
 
