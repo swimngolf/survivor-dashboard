@@ -65,7 +65,7 @@ tr:hover td { background: #1c2128; }
 <div class="header">
   <div>
     <h1>Snyder's <span>Streak Survivor</span> Dashboard</h1>
-    <div class="meta">Top 200 Leaderboard Pick Tracker</div>
+    <div class="meta">Top 200 Leaderboard Pick Tracker<br><span id="lastRefreshed" style="font-size:11px;color:#6e7681"></span></div>
   </div>
   <div class="date-nav">
     <button onclick="prevDay()">&larr; Prev</button>
@@ -300,6 +300,15 @@ function render() {
   const futurePicks = allResults.filter(r => !pickDateMatchesScrapeDate(r.date, scrapeDate));
 
   document.getElementById('currentDate').textContent = formatDate(date);
+
+  // Last refreshed timestamp
+  const refreshEl = document.getElementById('lastRefreshed');
+  if (db.meta?.lastUpdated) {
+    const d = new Date(db.meta.lastUpdated);
+    refreshEl.textContent = 'Last refreshed: ' + d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  } else {
+    refreshEl.textContent = 'Last refreshed: ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + ' at ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
 
   // Stats (today's picks only)
   document.getElementById('statTotal').textContent = results.length;
