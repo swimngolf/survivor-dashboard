@@ -137,10 +137,10 @@ tr:hover td { background: #1c2128; }
     </h2>
     <div id="liveScoresWrapper">
       <div style="display:flex;gap:8px;margin:12px 0 8px 0">
-        <button class="tab active" id="tabLive" onclick="setScoreFilter('live')">Live Now</button>
+        <button class="tab" id="tabLive" onclick="setScoreFilter('live')">Live Now</button>
         <button class="tab" id="tabFinal" onclick="setScoreFilter('final')">Final</button>
         <button class="tab" id="tabPre" onclick="setScoreFilter('pre')">Upcoming</button>
-        <button class="tab" id="tabAll" onclick="setScoreFilter('all')">All</button>
+        <button class="tab active" id="tabAll" onclick="setScoreFilter('all')">All</button>
       </div>
       <div id="liveScores" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
       <div class="empty-state" id="emptyScores" style="display:none"><p>No matching games right now.</p></div>
@@ -1309,7 +1309,7 @@ const ESPN_ENDPOINTS = {
 };
 
 let liveCollapsed = false;
-let scoreFilter = 'live';
+let scoreFilter = 'all';
 let cachedGames = [];
 
 function toggleLiveScores() {
@@ -1371,13 +1371,14 @@ async function fetchLiveScores() {
         const homeWinner = parseInt(homeScore) > parseInt(awayScore);
         const awayWinner = parseInt(awayScore) > parseInt(homeScore);
 
-        // Match ESPN game to our game names using location + abbreviation
+        // Match ESPN game to our game names using location names
+        // Require BOTH teams in the game name to match to avoid false positives
         let pickCount = 0;
         Object.entries(picksPerGame).forEach(([gameName, count]) => {
           const gn = gameName.toLowerCase();
-          const matchesHome = gn.includes(homeLoc.toLowerCase()) || gn.includes(homeName.toLowerCase());
-          const matchesAway = gn.includes(awayLoc.toLowerCase()) || gn.includes(awayName.toLowerCase());
-          if (matchesHome || matchesAway) {
+          const matchesHome = gn.includes(homeLoc.toLowerCase()) || (homeLoc.length > 3 && gn.includes(homeName.toLowerCase()));
+          const matchesAway = gn.includes(awayLoc.toLowerCase()) || (awayLoc.length > 3 && gn.includes(awayName.toLowerCase()));
+          if (matchesHome && matchesAway) {
             pickCount += count;
           }
         });
