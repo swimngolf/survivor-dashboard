@@ -317,7 +317,7 @@ function render() {
   const tally = buildTally(results);
   const topPick = tally[0];
   document.getElementById('statTopPick').textContent = topPick ? topPick.pick : '--';
-  document.getElementById('statTopPickSub').textContent = topPick ? `${topPick.count} picks - ${topPick.game}` : '';
+  document.getElementById('statTopPickSub').innerHTML = topPick ? `${topPick.count} picks - <span class="badge ${topPick.league.toLowerCase()}">${topPick.league}</span> ${topPick.game}` : '';
 
   const games = new Set(results.map(r => `${r.league}: ${r.game}`));
   document.getElementById('statGames').textContent = games.size;
@@ -378,6 +378,10 @@ function pickDateMatchesScrapeDate(pickDate, scrapeDate) {
 
 const LEAGUE_COLORS = { NHL: '#58a6ff', NBA: '#d29922', MLB: '#3fb950', NCAAB: '#bc8cff' };
 
+function leagueBadge(league) {
+  return `<span class="badge ${(league||'').toLowerCase()}" style="font-size:10px;margin-right:4px">${league}</span>`;
+}
+
 // Returns a Set of pick strings that had 3+ people on them in any single day
 function getQualifiedPicks(db) {
   const qualified = new Set();
@@ -394,7 +398,7 @@ function renderPickBars(tally) {
   const maxCount = tally.length > 0 ? tally[0].count : 1;
   container.innerHTML = tally.slice(0, 15).map(t => `
     <div class="pick-bar">
-      <span class="name">${t.pick} <span style="color:#8b949e;font-size:11px">(${t.game})</span></span>
+      <span class="name"><span class="badge ${t.league.toLowerCase()}" style="font-size:10px;vertical-align:middle;margin-right:4px">${t.league}</span>${t.pick} <span style="color:#8b949e;font-size:11px">(${t.game})</span></span>
       <div class="bar" style="width:${Math.max(t.count/maxCount*100, 4)}%;background:${LEAGUE_COLORS[t.league]||'#58a6ff'}"></div>
       <span class="count">${t.count}</span>
     </div>
@@ -521,7 +525,7 @@ function renderRecurringTable() {
     // Only count picks that had 3+ on that day
     (day.results || []).forEach(r => {
       if (dailyTally[r.pick] < 3) return;
-      if (!allPicks[r.pick]) allPicks[r.pick] = { count: 0, wins: 0, losses: 0, lastSeen: date };
+      if (!allPicks[r.pick]) allPicks[r.pick] = { count: 0, wins: 0, losses: 0, lastSeen: date, league: r.league, game: r.game };
       allPicks[r.pick].count++;
       if (date > allPicks[r.pick].lastSeen) allPicks[r.pick].lastSeen = date;
     });
@@ -531,7 +535,7 @@ function renderRecurringTable() {
   tbody.innerHTML = sorted.map(([pick, data]) => {
     const total = data.wins + data.losses;
     const wr = total > 0 ? `${Math.round(data.wins/total*100)}%` : 'N/A';
-    return `<tr><td><strong>${pick}</strong></td><td>${data.count}</td><td>${wr}</td><td>${formatDate(data.lastSeen)}</td></tr>`;
+    return `<tr><td><span class="badge ${data.league.toLowerCase()}" style="font-size:10px;margin-right:4px">${data.league}</span><strong>${pick}</strong> <span style="color:#8b949e;font-size:11px">(${data.game})</span></td><td>${data.count}</td><td>${wr}</td><td>${formatDate(data.lastSeen)}</td></tr>`;
   }).join('');
 }
 
@@ -553,7 +557,19 @@ function renderOutcomeHistory() {
     const losses = qualifiedArr.filter(o => o.outcome === 'LOSS').length;
     const total = wins + losses;
     const wr = total > 0 ? `${Math.round(wins/total*100)}%` : 'N/A';
-    return `<tr><td>${formatDate(date)}</td><td>${qualifiedArr.length}</td><td class="green">${wins}</td><td class="red">${losses}</td><td>${wr}</td><td>--</td><td>--</td></tr>`;
+    // Find the most popular qualified pick for this day
+    const qualifiedTally = {};
+    (dayData?.results || []).forEach(r => {
+      if (dailyTally[r.pick] >= 3) {
+        if (!qualifiedTally[r.pick]) qualifiedTally[r.pick] = { count: 0, league: r.league, game: r.game };
+        qualifiedTally[r.pick].count++;
+      }
+    });
+    const topEntry = Object.entries(qualifiedTally).sort((a,b) => b[1].count - a[1].count)[0];
+    const topPickCell = topEntry ? `<span class="badge ${topEntry[1].league.toLowerCase()}" style="font-size:10px;margin-right:3px">${topEntry[1].league}</span>${topEntry[0]} (${topEntry[1].count}x)` : '--';
+    const topPickOutcome = topEntry ? (qualifiedArr.find(o => o.pick === topEntry[0])?.outcome || '--') : '--';
+    const topResultBadge = topPickOutcome === 'WIN' ? '<span class="badge win">WIN</span>' : topPickOutcome === 'LOSS' ? '<span class="badge loss">LOSS</span>' : topPickOutcome;
+    return `<tr><td>${formatDate(date)}</td><td>${qualifiedArr.length}</td><td style="color:#3fb950">${wins}</td><td style="color:#f85149">${losses}</td><td>${wr}</td><td>${topPickCell}</td><td>${topResultBadge}</td></tr>`;
   }).join('');
 }
 
