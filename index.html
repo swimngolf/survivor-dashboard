@@ -1364,17 +1364,20 @@ async function fetchLiveScores() {
         const awayName = away?.team?.shortDisplayName || away?.team?.displayName || '';
         const homeAbbr = home?.team?.abbreviation || '';
         const awayAbbr = away?.team?.abbreviation || '';
+        const homeLoc = home?.team?.location || '';
+        const awayLoc = away?.team?.location || '';
         const homeScore = home?.score || '0';
         const awayScore = away?.score || '0';
         const homeWinner = parseInt(homeScore) > parseInt(awayScore);
         const awayWinner = parseInt(awayScore) > parseInt(homeScore);
 
-        // Match ESPN game to our game names and sum pick counts
+        // Match ESPN game to our game names using location + abbreviation
         let pickCount = 0;
         Object.entries(picksPerGame).forEach(([gameName, count]) => {
           const gn = gameName.toLowerCase();
-          if (gn.includes(homeName.toLowerCase()) || gn.includes(awayName.toLowerCase()) ||
-              gn.includes(homeAbbr.toLowerCase()) || gn.includes(awayAbbr.toLowerCase())) {
+          const matchesHome = gn.includes(homeLoc.toLowerCase()) || gn.includes(homeName.toLowerCase());
+          const matchesAway = gn.includes(awayLoc.toLowerCase()) || gn.includes(awayName.toLowerCase());
+          if (matchesHome || matchesAway) {
             pickCount += count;
           }
         });
