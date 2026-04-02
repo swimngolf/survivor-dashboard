@@ -138,7 +138,7 @@ tr:hover td { background: #1c2128; }
   </div>
 
   <div class="panel" style="margin-bottom:24px">
-    <h2>Outcome History</h2>
+    <h2>Outcome History (3+ Consensus Picks Only)</h2>
     <table id="outcomeTable">
       <thead>
         <tr><th>Date</th><th>Total Picks</th><th>Wins</th><th>Losses</th><th>Win Rate</th><th>Top Pick</th><th>Top Pick Result</th></tr>
@@ -486,11 +486,16 @@ function renderOutcomeHistory() {
   tbody.innerHTML = dates.map(date => {
     const oc = db.outcomes[date];
     const arr = Array.isArray(oc) ? oc : Object.values(oc);
-    const wins = arr.filter(o => o.outcome === 'WIN').length;
-    const losses = arr.filter(o => o.outcome === 'LOSS').length;
+    // Build daily tally from picks data to find 3+ consensus picks
+    const dayData = db.days[date];
+    const dailyTally = {};
+    (dayData?.results || []).forEach(r => { dailyTally[r.pick] = (dailyTally[r.pick] || 0) + 1; });
+    const qualifiedArr = arr.filter(o => dailyTally[o.pick] >= 3);
+    const wins = qualifiedArr.filter(o => o.outcome === 'WIN').length;
+    const losses = qualifiedArr.filter(o => o.outcome === 'LOSS').length;
     const total = wins + losses;
     const wr = total > 0 ? `${Math.round(wins/total*100)}%` : 'N/A';
-    return `<tr><td>${formatDate(date)}</td><td>${arr.length}</td><td class="green">${wins}</td><td class="red">${losses}</td><td>${wr}</td><td>--</td><td>--</td></tr>`;
+    return `<tr><td>${formatDate(date)}</td><td>${qualifiedArr.length}</td><td class="green">${wins}</td><td class="red">${losses}</td><td>${wr}</td><td>--</td><td>--</td></tr>`;
   }).join('');
 }
 
