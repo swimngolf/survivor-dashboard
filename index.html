@@ -103,7 +103,7 @@ tr:hover td { background: #1c2128; }
       <div class="chart-container"><canvas id="gameChart"></canvas></div>
     </div>
     <div class="panel">
-      <h2>Historical Win Rate by League</h2>
+      <h2>Historical Win Rate by League (3+ Consensus Picks Only)</h2>
       <div class="chart-container"><canvas id="winRateChart"></canvas></div>
     </div>
   </div>
@@ -300,14 +300,16 @@ function render() {
   document.getElementById('statTopStreak').textContent = topStreak.streak;
   document.getElementById('statTopStreakSub').textContent = topStreak.member;
 
-  // Win rate
+  // Win rate (only picks with distribution of 3+)
   const allOutcomes = Object.values(db.outcomes).flat();
-  const totalW = allOutcomes.filter(o => o.outcome === 'WIN').length;
-  const totalL = allOutcomes.filter(o => o.outcome === 'LOSS').length;
+  const qualifiedPicks = getQualifiedPicks(db); // picks that had 3+ people on them
+  const qualifiedOutcomes = allOutcomes.filter(o => qualifiedPicks.has(o.pick));
+  const totalW = qualifiedOutcomes.filter(o => o.outcome === 'WIN').length;
+  const totalL = qualifiedOutcomes.filter(o => o.outcome === 'LOSS').length;
   const totalGraded = totalW + totalL;
   document.getElementById('statWinRate').textContent = totalGraded > 0 ? `${Math.round(totalW / totalGraded * 100)}%` : 'N/A';
   document.getElementById('statWinRate').className = 'value ' + (totalGraded > 0 && totalW/totalGraded >= 0.5 ? 'green' : totalGraded > 0 ? 'red' : '');
-  document.getElementById('statWinRateSub').textContent = totalGraded > 0 ? `${totalW}W - ${totalL}L across ${Object.keys(db.outcomes).length} days` : 'No outcomes tracked yet';
+  document.getElementById('statWinRateSub').textContent = totalGraded > 0 ? `${totalW}W - ${totalL}L (picks with 3+ consensus)` : 'Tracks picks with 3+ consensus only';
 
   renderPickBars(tally);
   renderLeagueChart(results);
@@ -335,6 +337,17 @@ function formatDate(d) {
 }
 
 const LEAGUE_COLORS = { NHL: '#58a6ff', NBA: '#d29922', MLB: '#3fb950', NCAAB: '#bc8cff' };
+
+// Returns a Set of pick strings that had 3+ people on them in any single day
+function getQualifiedPicks(db) {
+  const qualified = new Set();
+  Object.values(db.days).forEach(day => {
+    const tally = {};
+    (day.results || []).forEach(r => { tally[r.pick] = (tally[r.pick] || 0) + 1; });
+    Object.entries(tally).forEach(([pick, count]) => { if (count >= 3) qualified.add(pick); });
+  });
+  return qualified;
+}
 
 function renderPickBars(tally) {
   const container = document.getElementById('pickBars');
@@ -444,7 +457,12 @@ function renderVolumeChart() {
 function renderRecurringTable() {
   const allPicks = {};
   Object.entries(db.days).forEach(([date, day]) => {
+    // Build daily tally first to check distribution
+    const dailyTally = {};
+    (day.results || []).forEach(r => { dailyTally[r.pick] = (dailyTally[r.pick] || 0) + 1; });
+    // Only count picks that had 3+ on that day
     (day.results || []).forEach(r => {
+      if (dailyTally[r.pick] < 3) return;
       if (!allPicks[r.pick]) allPicks[r.pick] = { count: 0, wins: 0, losses: 0, lastSeen: date };
       allPicks[r.pick].count++;
       if (date > allPicks[r.pick].lastSeen) allPicks[r.pick].lastSeen = date;
@@ -480,7 +498,15 @@ function renderWinRateChart() {
   const leagues = ['NHL', 'NBA', 'MLB', 'NCAAB'];
   const wins = leagues.map(() => 0);
   const losses = leagues.map(() => 0);
-  // Placeholder until outcomes are tracked
+  const qualifiedPicks = getQualifiedPicks(db);
+  // Tally wins/losses by league, only for qualified picks (3+ consensus)
+  Object.values(db.outcomes).flat().forEach(o => {
+    if (!qualifiedPicks.has(o.pick)) return;
+    const idx = leagues.indexOf(o.league);
+    if (idx === -1) return;
+    if (o.outcome === 'WIN') wins[idx]++;
+    else if (o.outcome === 'LOSS') losses[idx]++;
+  });
   if (charts.winRate) charts.winRate.destroy();
   charts.winRate = new Chart(document.getElementById('winRateChart'), {
     type: 'bar',
