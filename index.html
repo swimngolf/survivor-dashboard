@@ -1326,40 +1326,11 @@ function setScoreFilter(f) {
 }
 
 async function fetchLiveScores() {
-  const date = getCurrentDate();
-  const dayData = db.days[date];
-  if (!dayData) return;
-
-  // Build pick counts per game from ALL results (no date filtering here)
-  const allResults = dayData.results || [];
-  const picksPerGame = {};
-  allResults.forEach(r => {
-    if (!picksPerGame[r.game]) picksPerGame[r.game] = { count: 0, league: r.league };
-    picksPerGame[r.game].count++;
-  });
-
-  // Get all unique leagues
-  const leaguesNeeded = [...new Set(allResults.map(r => r.league))];
-
-  // Helper: check if an ESPN team partially matches any word in our game names
-  function findPickCount(espnHome, espnAway, league) {
-    const homeWords = espnHome.toLowerCase().split(/[\s.]+/).filter(w => w.length > 2);
-    const awayWords = espnAway.toLowerCase().split(/[\s.]+/).filter(w => w.length > 2);
-    let total = 0;
-    Object.entries(picksPerGame).forEach(([gameName, info]) => {
-      if (info.league !== league) return;
-      const gn = gameName.toLowerCase();
-      const homeMatch = homeWords.some(w => gn.includes(w));
-      const awayMatch = awayWords.some(w => gn.includes(w));
-      if (homeMatch || awayMatch) total += info.count;
-    });
-    return total;
-  }
-
   const allGames = [];
-  for (const league of leaguesNeeded) {
+  const leagues = ['NHL','NBA','MLB','NCAAB'];
+
+  for (const league of leagues) {
     const url = ESPN_ENDPOINTS[league];
-    if (!url) continue;
     try {
       const resp = await fetch(url);
       const data = await resp.json();
@@ -1367,29 +1338,19 @@ async function fetchLiveScores() {
         const competitors = ev.competitions?.[0]?.competitors || [];
         const home = competitors.find(c => c.homeAway === 'home');
         const away = competitors.find(c => c.homeAway === 'away');
-        const status = ev.status?.type?.name || '';
-        const detail = ev.status?.type?.shortDetail || ev.status?.type?.detail || '';
-
-        const homeName = home?.team?.shortDisplayName || '';
-        const awayName = away?.team?.shortDisplayName || '';
-        const homeLoc = home?.team?.location || '';
-        const awayLoc = away?.team?.location || '';
-        const homeScore = home?.score || '0';
-        const awayScore = away?.score || '0';
-        const homeWinner = parseInt(homeScore) > parseInt(awayScore);
-        const awayWinner = parseInt(awayScore) > parseInt(homeScore);
-
-        const pickCount = findPickCount(homeLoc + ' ' + homeName, awayLoc + ' ' + awayName, league);
-
-        if (pickCount > 0) {
-          allGames.push({
-            league, homeName, awayName,
-            homeAbbr: home?.team?.abbreviation || '',
-            awayAbbr: away?.team?.abbreviation || '',
-            homeScore, awayScore, homeWinner, awayWinner,
-            status, detail, pickCount
-          });
-        }
+        allGames.push({
+          league,
+          homeName: home?.team?.shortDisplayName || '',
+          awayName: away?.team?.shortDisplayName || '',
+          homeAbbr: home?.team?.abbreviation || '',
+          awayAbbr: away?.team?.abbreviation || '',
+          homeScore: home?.score || '0',
+          awayScore: away?.score || '0',
+          homeWinner: parseInt(home?.score||0) > parseInt(away?.score||0),
+          awayWinner: parseInt(away?.score||0) > parseInt(home?.score||0),
+          status: ev.status?.type?.name || '',
+          detail: ev.status?.type?.shortDetail || ev.status?.type?.detail || ''
+        });
       });
     } catch (e) { console.log('ESPN fetch error for ' + league + ':', e); }
   }
@@ -1435,7 +1396,6 @@ function renderLiveScores(games) {
       <div class="sc-team ${g.homeWinner && g.status==='STATUS_FINAL' ? 'winner' : ''}">
         <span class="name">${g.homeName}</span><span class="score">${g.homeScore}</span>
       </div>
-      <div style="margin-top:6px;padding-top:6px;border-top:1px solid #30363d;font-size:11px;color:#8b949e">${g.pickCount} pick${g.pickCount>1?'s':''} on this game</div>
     </div>`;
   }).join('');
 
