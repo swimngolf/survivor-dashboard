@@ -59,6 +59,36 @@ tr:hover td { background: #1c2128; }
 .empty-state { text-align: center; padding: 40px; color: #8b949e; }
 .empty-state p { margin-top: 8px; font-size: 13px; }
 #loadStatus { position: fixed; bottom: 20px; right: 20px; background: #21262d; border: 1px solid #30363d; padding: 8px 16px; border-radius: 6px; font-size: 12px; color: #8b949e; display: none; }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .header { flex-direction: column; gap: 12px; padding: 16px; }
+  .header h1 { font-size: 18px; }
+  .date-nav { flex-wrap: wrap; justify-content: center; }
+  .container { padding: 12px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .stats-row .stat-card:last-child { grid-column: span 2; }
+  .stat-card { padding: 14px; }
+  .stat-card .value { font-size: 22px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .pick-bar { flex-wrap: wrap; }
+  .pick-bar .name { min-width: 100%; text-align: left; font-size: 11px; margin-bottom: 2px; }
+  .chart-container { height: 220px; }
+  table { display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
+  th, td { padding: 7px 8px; font-size: 12px; }
+  .panel { padding: 14px; }
+  .panel h2 { font-size: 14px; }
+}
+
+@media (max-width: 480px) {
+  .stats-row { grid-template-columns: 1fr; }
+  .stats-row .stat-card:last-child { grid-column: span 1; }
+  .stat-card .value { font-size: 20px; }
+  .header h1 { font-size: 16px; }
+  .date-nav button { padding: 5px 8px; font-size: 12px; }
+  .date-nav .current-date { font-size: 13px; }
+  .badge { font-size: 10px; padding: 1px 6px; }
+}
 </style>
 </head>
 <body>
