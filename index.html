@@ -131,19 +131,19 @@ tr:hover td { background: #1c2128; }
   <!-- Live Scores -->
   <div class="panel" style="margin-bottom:24px">
     <h2 style="cursor:pointer;user-select:none" onclick="toggleLiveScores()">
-      Live Scores
+      Live Scores <span id="liveIndicator" style="display:inline-block;width:8px;height:8px;background:#3fb950;border-radius:50%;margin-left:6px;animation:pulse 2s infinite"></span>
+      <span style="font-size:11px;color:#8b949e;font-weight:400;margin-left:8px" id="liveTimer">Updates every 30s</span>
       <span id="liveToggle" style="float:right;font-size:13px;color:#8b949e">&#9660;</span>
     </h2>
     <div id="liveScoresWrapper" style="margin-top:12px">
-      <iframe src="https://www.sportbusy.com/embed" width="100%" height="600" style="border:none;border-radius:8px;overflow:hidden" loading="lazy" title="Live Sports Scores" allow="autoplay"></iframe>
-      <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-        <span style="font-size:11px;color:#6e7681">Open full scoreboards:</span>
-        <a href="https://www.espn.com/mlb/scoreboard" target="_blank" style="font-size:12px;color:#3fb950;text-decoration:none">MLB</a>
-        <a href="https://www.espn.com/nba/scoreboard" target="_blank" style="font-size:12px;color:#d29922;text-decoration:none">NBA</a>
-        <a href="https://www.espn.com/nhl/scoreboard" target="_blank" style="font-size:12px;color:#58a6ff;text-decoration:none">NHL</a>
-        <a href="https://www.espn.com/mens-college-basketball/scoreboard" target="_blank" style="font-size:12px;color:#bc8cff;text-decoration:none">NCAAB</a>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <button class="tab active" onclick="switchLeague('mlb',this)">MLB</button>
+        <button class="tab" onclick="switchLeague('nba',this)">NBA</button>
+        <button class="tab" onclick="switchLeague('nhl',this)">NHL</button>
+        <button class="tab" onclick="switchLeague('ncaab',this)">NCAAB</button>
       </div>
-      <div style="font-size:10px;color:#6e7681;margin-top:4px">Sports data by <a href="https://www.sportbusy.com" style="color:#58a6ff" target="_blank">SportBusy</a></div>
+      <div id="liveScores" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
+      <div class="empty-state" id="emptyScores" style="display:none"><p>Loading scores...</p></div>
     </div>
   </div>
 
@@ -1539,15 +1539,87 @@ function renderWinRateChart() {
 }
 
 // ============================================================
-// LIVE SCORES
+// LIVE SCORES via ESPN API (proxied through allorigins.win)
 // ============================================================
 let liveCollapsed = false;
+let currentLeague = 'mlb';
+
+const ESPN_URLS = {
+  mlb: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
+  nba: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
+  nhl: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
+  ncaab: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'
+};
 
 function toggleLiveScores() {
   liveCollapsed = !liveCollapsed;
   document.getElementById('liveScoresWrapper').style.display = liveCollapsed ? 'none' : 'block';
   document.getElementById('liveToggle').innerHTML = liveCollapsed ? '&#9654;' : '&#9660;';
 }
+
+function switchLeague(league, btn) {
+  currentLeague = league;
+  document.querySelectorAll('#liveScoresWrapper .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  fetchScores();
+}
+
+async function fetchScores() {
+  const container = document.getElementById('liveScores');
+  const empty = document.getElementById('emptyScores');
+  const url = ESPN_URLS[currentLeague];
+  const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+
+  try {
+    const resp = await fetch(proxy);
+    const data = await resp.json();
+    const events = data.events || [];
+
+    if (events.length === 0) { container.innerHTML = ''; empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    container.innerHTML = events.map(ev => {
+      const comp = ev.competitions?.[0] || {};
+      const competitors = comp.competitors || [];
+      const home = competitors.find(c => c.homeAway === 'home') || {};
+      const away = competitors.find(c => c.homeAway === 'away') || {};
+      const status = ev.status?.type?.name || '';
+      const detail = ev.status?.type?.shortDetail || ev.status?.type?.detail || '';
+      const homeScore = home.score || '0';
+      const awayScore = away.score || '0';
+      const homeName = home.team?.displayName || '';
+      const awayName = away.team?.displayName || '';
+      const homeLogo = home.team?.logo || '';
+      const awayLogo = away.team?.logo || '';
+      const homeWin = status === 'STATUS_FINAL' && parseInt(homeScore) > parseInt(awayScore);
+      const awayWin = status === 'STATUS_FINAL' && parseInt(awayScore) > parseInt(homeScore);
+      const statusClass = status === 'STATUS_IN_PROGRESS' ? 'live' : status === 'STATUS_FINAL' ? 'final' : 'pre';
+      const statusText = status === 'STATUS_IN_PROGRESS' ? detail : status === 'STATUS_FINAL' ? 'Final' : detail || 'Scheduled';
+
+      return '<div class="score-card">' +
+        '<div class="sc-header"><span class="badge ' + currentLeague + '">' + currentLeague.toUpperCase() + '</span>' +
+        '<span class="sc-status ' + statusClass + '">' + statusText + '</span></div>' +
+        '<div class="sc-team ' + (awayWin ? 'winner' : '') + '">' +
+        (awayLogo ? '<img src="' + awayLogo + '" style="width:18px;height:18px;margin-right:6px;vertical-align:middle">' : '') +
+        '<span class="name">' + awayName + '</span><span class="score">' + awayScore + '</span></div>' +
+        '<div class="sc-team ' + (homeWin ? 'winner' : '') + '">' +
+        (homeLogo ? '<img src="' + homeLogo + '" style="width:18px;height:18px;margin-right:6px;vertical-align:middle">' : '') +
+        '<span class="name">' + homeName + '</span><span class="score">' + homeScore + '</span></div>' +
+        '</div>';
+    }).join('');
+
+    const liveCount = events.filter(e => e.status?.type?.name === 'STATUS_IN_PROGRESS').length;
+    document.getElementById('liveIndicator').style.background = liveCount > 0 ? '#3fb950' : '#8b949e';
+    document.getElementById('liveIndicator').style.animation = liveCount > 0 ? 'pulse 2s infinite' : 'none';
+    document.getElementById('liveTimer').textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  } catch (e) {
+    console.log('Score fetch error:', e);
+    container.innerHTML = '<div class="empty-state"><p>Could not load scores. Try refreshing.</p></div>';
+  }
+}
+
+fetchScores();
+setInterval(fetchScores, 30000);
 
 // Boot
 render();
