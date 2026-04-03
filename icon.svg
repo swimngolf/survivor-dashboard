@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="76.8" fill="#1a1f2e"/>
+<rect x="20.48" y="20.48" width="471.04" height="471.04" rx="61.44" fill="#0f1117" stroke="#58a6ff" stroke-width="4.096"/>
+<text x="256" y="194.56" text-anchor="middle" font-family="Arial,sans-serif" font-size="71.68" font-weight="bold" fill="#58a6ff">STREAK</text>
+<text x="256" y="307.2" text-anchor="middle" font-family="Arial,sans-serif" font-size="61.44" font-weight="bold" fill="#3fb950">SURVIVOR</text>
+<text x="256" y="435.2" text-anchor="middle" font-family="Arial,sans-serif" font-size="92.16">🏆</text>
+</svg>

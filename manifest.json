@@ -1,0 +1,12 @@
+﻿{
+  "name": "Snyder's Streak Survivor",
+  "short_name": "Streak Survivor",
+  "description": "Covers Streak Survivor pick tracker and live scores",
+  "start_url": "/survivor-dashboard/",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#1a1f2e",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
