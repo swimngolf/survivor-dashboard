@@ -21,7 +21,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .header .meta { font-size: 13px; color: #8b949e; }
 .container { max-width: 1400px; margin: 0 auto; padding: 24px; }
 .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
-.stat-card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 20px; }
+.stat-card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 20px; transition: border-color 0.2s, transform 0.2s; }
+.stat-card:hover { border-color: #58a6ff; transform: translateY(-2px); }
 .stat-card .label { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 .stat-card .value { font-size: 28px; font-weight: 700; color: #f0f6fc; }
 .stat-card .value.green { color: #3fb950; }
@@ -69,7 +70,8 @@ tr:hover td { background: #1c2128; }
 #loadStatus { position: fixed; bottom: 20px; right: 20px; background: #21262d; border: 1px solid #30363d; padding: 8px 16px; border-radius: 6px; font-size: 12px; color: #8b949e; display: none; }
 
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-.score-card { background: #1c2128; border: 1px solid #30363d; border-radius: 8px; padding: 12px 14px; }
+.score-card { background: #1c2128; border: 1px solid #30363d; border-radius: 8px; padding: 12px 14px; transition: border-color 0.2s, transform 0.2s; }
+.score-card:hover { border-color: #58a6ff; transform: translateY(-1px); }
 .score-card .sc-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .score-card .sc-status { font-size: 11px; font-weight: 600; }
 .score-card .sc-status.live { color: #f85149; }
@@ -115,7 +117,7 @@ tr:hover td { background: #1c2128; }
 <body>
 <div class="header">
   <div>
-    <h1>Snyder's <span>Streak Survivor</span> Dashboard</h1>
+    <h1>🏆 Snyder's <span>Streak Survivor</span> Dashboard</h1>
     <div class="meta">Top 200 Leaderboard Pick Tracker<br><span style="font-size:20px;font-weight:700;background:linear-gradient(90deg,#58a6ff,#bc8cff,#d29922,#3fb950);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:0.5px;display:inline-block;margin:6px 0">"The trend is your friend... Until it ends"</span><br><span id="lastRefreshed" style="font-size:11px;color:#6e7681"></span></div>
   </div>
   <div class="date-nav">
@@ -134,16 +136,16 @@ tr:hover td { background: #1c2128; }
 <div class="container">
   <!-- Summary Stats -->
   <div class="stats-row" id="statsRow">
-    <div class="stat-card"><div class="label">Total Pending Picks</div><div class="value blue" id="statTotal">--</div><div class="sub" id="statScope">Top 200</div></div>
-    <div class="stat-card"><div class="label">Most Popular Pick</div><div class="value" id="statTopPick">--</div><div class="sub" id="statTopPickSub"></div></div>
-    <div class="stat-card"><div class="label">Highest Streak Pending</div><div class="value green" id="statTopStreak">--</div><div class="sub" id="statTopStreakSub"></div></div>
-    <div class="stat-card"><div class="label">Weekly Win Rate</div><div class="value" id="statWeeklyWin">--</div><div class="sub" id="statWeeklyWinSub">this week</div></div>
-    <div class="stat-card"><div class="label">Overall Win Rate - Since Inception</div><div class="value" id="statWinRate">--</div><div class="sub" id="statWinRateSub">across all tracked days</div></div>
+    <div class="stat-card"><div class="label">📊 Total Pending Picks</div><div class="value blue" id="statTotal">--</div><div class="sub" id="statScope">Top 200</div></div>
+    <div class="stat-card"><div class="label">🎯 Most Popular Pick</div><div class="value" id="statTopPick">--</div><div class="sub" id="statTopPickSub"></div></div>
+    <div class="stat-card"><div class="label">🔥 Highest Streak Pending</div><div class="value green" id="statTopStreak">--</div><div class="sub" id="statTopStreakSub"></div></div>
+    <div class="stat-card"><div class="label">📅 Weekly Win Rate</div><div class="value" id="statWeeklyWin">--</div><div class="sub" id="statWeeklyWinSub">this week</div></div>
+    <div class="stat-card"><div class="label">🏅 Overall Win Rate - Since Inception</div><div class="value" id="statWinRate">--</div><div class="sub" id="statWinRateSub">across all tracked days</div></div>
   </div>
 
   <!-- Outcome History -->
   <div class="panel" style="margin-bottom:24px">
-    <h2>Outcome History (3+ Consensus Picks Only)</h2>
+    <h2>📋 Outcome History (3+ Consensus Picks Only)</h2>
     <table id="outcomeTable">
       <thead>
         <tr><th>Date</th><th>Total Picks</th><th>Wins</th><th>Losses</th><th>Win Rate</th><th>Top Pick</th><th>Top Pick Result</th></tr>
@@ -164,10 +166,10 @@ tr:hover td { background: #1c2128; }
     </h2>
     <div id="liveScoresWrapper" style="margin-top:12px">
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-        <button class="tab active" onclick="switchLeague('mlb',this)">MLB</button>
-        <button class="tab" onclick="switchLeague('nba',this)">NBA</button>
-        <button class="tab" onclick="switchLeague('nhl',this)">NHL</button>
-        <button class="tab" onclick="switchLeague('ncaab',this)">NCAAB</button>
+        <button class="tab active" onclick="switchLeague('mlb',this)">⚾ MLB</button>
+        <button class="tab" onclick="switchLeague('nba',this)">🏀 NBA</button>
+        <button class="tab" onclick="switchLeague('nhl',this)">🏒 NHL</button>
+        <button class="tab" onclick="switchLeague('ncaab',this)">🏀 NCAAB</button>
       </div>
       <div id="liveScores" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
       <div id="scoresExpandBtn" style="display:none;text-align:center;margin-top:8px">
@@ -180,29 +182,29 @@ tr:hover td { background: #1c2128; }
   <!-- Charts Row -->
   <div class="grid-2">
     <div class="panel">
-      <h2>Pick Distribution</h2>
+      <h2>📊 Pick Distribution</h2>
       <div id="pickBars"></div>
     </div>
     <div class="panel">
-      <h2>Picks by League</h2>
+      <h2>🏟️ Picks by League</h2>
       <div class="chart-container"><canvas id="leagueChart"></canvas></div>
     </div>
   </div>
 
   <div class="grid-2">
     <div class="panel">
-      <h2>Picks by Game</h2>
+      <h2>⚾🏀🏒 Picks by Game</h2>
       <div class="chart-container"><canvas id="gameChart"></canvas></div>
     </div>
     <div class="panel">
-      <h2>Overall Win Rate by League - Since Inception (3+ Consensus Picks Only)</h2>
+      <h2>📈 Overall Win Rate by League - Since Inception (3+ Consensus Picks Only)</h2>
       <div class="chart-container"><canvas id="winRateChart"></canvas></div>
     </div>
   </div>
 
   <!-- Today's Picks Table -->
   <div class="panel" style="margin-bottom:24px">
-    <h2>Today's Pending Picks</h2>
+    <h2>🎲 Today's Pending Picks</h2>
     <table id="picksTable">
       <thead>
         <tr><th>Rank</th><th>Member</th><th>Streak</th><th>League</th><th>Game</th><th>Pick</th><th>Outcome</th></tr>
@@ -223,7 +225,7 @@ tr:hover td { background: #1c2128; }
 
   <!-- Future Picks -->
   <div class="panel" style="margin-bottom:24px">
-    <h2>Locked-In Future Picks</h2>
+    <h2>🔮 Locked-In Future Picks</h2>
     <table id="futureTable">
       <thead>
         <tr><th>Rank</th><th>Member</th><th>Streak</th><th>Date</th><th>League</th><th>Game</th><th>Pick</th></tr>
@@ -238,11 +240,11 @@ tr:hover td { background: #1c2128; }
   <!-- Historical Tracking -->
   <div class="grid-2">
     <div class="panel">
-      <h2>Daily Pick Volume</h2>
+      <h2>📉 Daily Pick Volume</h2>
       <div class="chart-container"><canvas id="volumeChart"></canvas></div>
     </div>
     <div class="panel">
-      <h2>Top Recurring Picks (All Time)</h2>
+      <h2>🔁 Top Recurring Picks (All Time)</h2>
       <table id="recurringTable">
         <thead><tr><th>Pick</th><th>Times Chosen</th><th>Win Rate</th><th>Event Date</th></tr></thead>
         <tbody id="recurringBody"></tbody>
