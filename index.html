@@ -117,6 +117,11 @@ tr:hover td { background: #1c2128; }
     <span class="current-date" id="currentDate">Loading...</span>
     <button onclick="nextDay()">Next &rarr;</button>
     <button onclick="loadToday()" style="margin-left:8px">Today</button>
+    <span style="color:#30363d;margin:0 6px">|</span>
+    <input type="date" id="dateFrom" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:5px 8px;border-radius:6px;font-size:12px" onchange="applyDateRange()">
+    <span style="font-size:12px;color:#8b949e">to</span>
+    <input type="date" id="dateTo" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:5px 8px;border-radius:6px;font-size:12px" onchange="applyDateRange()">
+    <button onclick="clearDateRange()" style="background:#21262d;border:1px solid #30363d;color:#8b949e;padding:5px 8px;border-radius:6px;cursor:pointer;font-size:11px">Clear</button>
   </div>
 </div>
 
@@ -233,7 +238,7 @@ tr:hover td { background: #1c2128; }
     <div class="panel">
       <h2>Top Recurring Picks (All Time)</h2>
       <table id="recurringTable">
-        <thead><tr><th>Pick</th><th>Times Chosen</th><th>Win Rate</th><th>Last Seen</th></tr></thead>
+        <thead><tr><th>Pick</th><th>Times Chosen</th><th>Win Rate</th><th>Event Date</th></tr></thead>
         <tbody id="recurringBody"></tbody>
       </table>
     </div>
@@ -2174,7 +2179,45 @@ function prevDay() {
 function nextDay() {
   if (currentDateIdx > 0) { currentDateIdx--; render(); }
 }
-function loadToday() { currentDateIdx = 0; render(); }
+function loadToday() { currentDateIdx = 0; dateRangeMode = false; render(); }
+
+let dateRangeMode = false;
+let dateRangeFrom = null;
+let dateRangeTo = null;
+
+function applyDateRange() {
+  const from = document.getElementById('dateFrom').value;
+  const to = document.getElementById('dateTo').value;
+  if (from && to) {
+    dateRangeMode = true;
+    dateRangeFrom = from;
+    dateRangeTo = to;
+    render();
+  }
+}
+
+function clearDateRange() {
+  dateRangeMode = false;
+  dateRangeFrom = null;
+  dateRangeTo = null;
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  render();
+}
+
+// Merge results across a date range
+function getRangeResults() {
+  if (!dateRangeMode) return null;
+  const merged = [];
+  let totalRows = 0;
+  Object.entries(db.days).forEach(([date, day]) => {
+    if (date >= dateRangeFrom && date <= dateRangeTo) {
+      (day.results || []).forEach(r => merged.push(r));
+      totalRows = Math.max(totalRows, day.totalRows || 200);
+    }
+  });
+  return { results: merged, totalRows };
+}
 
 // ============================================================
 // RENDER
@@ -2185,17 +2228,33 @@ function render() {
     document.getElementById('currentDate').textContent = 'No data';
     return;
   }
-  const dayData = db.days[date];
-  const allResults = dayData?.results || [];
-  const outcomes = db.outcomes[date] || {};
+
+  // Check if we're in date range mode
+  const rangeData = getRangeResults();
+  let allResults, outcomes, displayDate;
+
+  if (rangeData && dateRangeMode) {
+    allResults = rangeData.results;
+    outcomes = {};
+    Object.entries(db.outcomes).forEach(([d, arr]) => {
+      if (d >= dateRangeFrom && d <= dateRangeTo) {
+        (Array.isArray(arr) ? arr : []).forEach(o => { outcomes[o.member] = o.outcome; });
+      }
+    });
+    displayDate = formatDate(dateRangeFrom) + ' - ' + formatDate(dateRangeTo);
+  } else {
+    const dayData = db.days[date];
+    allResults = dayData?.results || [];
+    outcomes = db.outcomes[date] || {};
+    displayDate = formatDate(date);
+  }
 
   // Split into same-day picks vs future picks
-  // Parse the scrape date (date key like "2026-04-02") to match against pick dates (like "Apr 2, 2026")
-  const scrapeDate = date; // "2026-04-02"
-  const results = allResults.filter(r => pickDateMatchesScrapeDate(r.date, scrapeDate));
-  const futurePicks = allResults.filter(r => !pickDateMatchesScrapeDate(r.date, scrapeDate));
+  const scrapeDate = dateRangeMode ? null : date;
+  const results = dateRangeMode ? allResults : allResults.filter(r => pickDateMatchesScrapeDate(r.date, scrapeDate));
+  const futurePicks = dateRangeMode ? [] : allResults.filter(r => !pickDateMatchesScrapeDate(r.date, scrapeDate));
 
-  document.getElementById('currentDate').textContent = formatDate(date);
+  document.getElementById('currentDate').textContent = displayDate;
 
   // Last refreshed timestamp (baked in by scraper, not browser time)
   const refreshEl = document.getElementById('lastRefreshed');
@@ -2488,15 +2547,13 @@ function renderVolumeChart() {
 function renderRecurringTable() {
   const allPicks = {};
   Object.entries(db.days).forEach(([date, day]) => {
-    // Build daily tally first to check distribution
     const dailyTally = {};
     (day.results || []).forEach(r => { dailyTally[r.pick] = (dailyTally[r.pick] || 0) + 1; });
-    // Only count picks that had 3+ on that day
     (day.results || []).forEach(r => {
       if (dailyTally[r.pick] < 3) return;
-      if (!allPicks[r.pick]) allPicks[r.pick] = { count: 0, wins: 0, losses: 0, lastSeen: date, league: r.league, game: r.game };
+      if (!allPicks[r.pick]) allPicks[r.pick] = { count: 0, wins: 0, losses: 0, eventDate: r.date || '', league: r.league, game: r.game };
       allPicks[r.pick].count++;
-      if (date > allPicks[r.pick].lastSeen) allPicks[r.pick].lastSeen = date;
+      if (r.date) allPicks[r.pick].eventDate = r.date;
     });
   });
   const sorted = Object.entries(allPicks).sort((a, b) => b[1].count - a[1].count).slice(0, 10);
@@ -2504,7 +2561,7 @@ function renderRecurringTable() {
   tbody.innerHTML = sorted.map(([pick, data]) => {
     const total = data.wins + data.losses;
     const wr = total > 0 ? `${Math.round(data.wins/total*100)}%` : 'N/A';
-    return `<tr><td><span class="badge ${data.league.toLowerCase()}" style="font-size:10px;margin-right:4px">${data.league}</span><strong>${pick}</strong> <span style="color:#8b949e;font-size:11px">(${data.game})</span></td><td>${data.count}</td><td>${wr}</td><td>${formatDate(data.lastSeen)}</td></tr>`;
+    return `<tr><td><span class="badge ${data.league.toLowerCase()}" style="font-size:10px;margin-right:4px">${data.league}</span><strong>${pick}</strong> <span style="color:#8b949e;font-size:11px">(${data.game})</span></td><td>${data.count}</td><td>${wr}</td><td>${data.eventDate}</td></tr>`;
   }).join('');
 }
 
