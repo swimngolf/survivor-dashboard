@@ -2359,55 +2359,70 @@ function switchLeague(league, btn) {
 async function fetchScores() {
   const container = document.getElementById('liveScores');
   const empty = document.getElementById('emptyScores');
-  const url = ESPN_URLS[currentLeague];
-  const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+  const espnUrl = ESPN_URLS[currentLeague];
 
-  try {
-    const resp = await fetch(proxy);
-    const data = await resp.json();
-    const events = data.events || [];
+  // Try multiple CORS proxies in order
+  const proxies = [
+    'https://corsproxy.io/?' + encodeURIComponent(espnUrl),
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(espnUrl),
+    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(espnUrl)
+  ];
 
-    if (events.length === 0) { container.innerHTML = ''; empty.style.display = 'block'; return; }
-    empty.style.display = 'none';
-
-    container.innerHTML = events.map(ev => {
-      const comp = ev.competitions?.[0] || {};
-      const competitors = comp.competitors || [];
-      const home = competitors.find(c => c.homeAway === 'home') || {};
-      const away = competitors.find(c => c.homeAway === 'away') || {};
-      const status = ev.status?.type?.name || '';
-      const detail = ev.status?.type?.shortDetail || ev.status?.type?.detail || '';
-      const homeScore = home.score || '0';
-      const awayScore = away.score || '0';
-      const homeName = home.team?.displayName || '';
-      const awayName = away.team?.displayName || '';
-      const homeLogo = home.team?.logo || '';
-      const awayLogo = away.team?.logo || '';
-      const homeWin = status === 'STATUS_FINAL' && parseInt(homeScore) > parseInt(awayScore);
-      const awayWin = status === 'STATUS_FINAL' && parseInt(awayScore) > parseInt(homeScore);
-      const statusClass = status === 'STATUS_IN_PROGRESS' ? 'live' : status === 'STATUS_FINAL' ? 'final' : 'pre';
-      const statusText = status === 'STATUS_IN_PROGRESS' ? detail : status === 'STATUS_FINAL' ? 'Final' : detail || 'Scheduled';
-
-      return '<div class="score-card">' +
-        '<div class="sc-header"><span class="badge ' + currentLeague + '">' + currentLeague.toUpperCase() + '</span>' +
-        '<span class="sc-status ' + statusClass + '">' + statusText + '</span></div>' +
-        '<div class="sc-team ' + (awayWin ? 'winner' : '') + '">' +
-        (awayLogo ? '<img src="' + awayLogo + '" style="width:18px;height:18px;margin-right:6px;vertical-align:middle">' : '') +
-        '<span class="name">' + awayName + '</span><span class="score">' + awayScore + '</span></div>' +
-        '<div class="sc-team ' + (homeWin ? 'winner' : '') + '">' +
-        (homeLogo ? '<img src="' + homeLogo + '" style="width:18px;height:18px;margin-right:6px;vertical-align:middle">' : '') +
-        '<span class="name">' + homeName + '</span><span class="score">' + homeScore + '</span></div>' +
-        '</div>';
-    }).join('');
-
-    const liveCount = events.filter(e => e.status?.type?.name === 'STATUS_IN_PROGRESS').length;
-    document.getElementById('liveIndicator').style.background = liveCount > 0 ? '#3fb950' : '#8b949e';
-    document.getElementById('liveIndicator').style.animation = liveCount > 0 ? 'pulse 2s infinite' : 'none';
-    document.getElementById('liveTimer').textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  } catch (e) {
-    console.log('Score fetch error:', e);
-    container.innerHTML = '<div class="empty-state"><p>Could not load scores. Try refreshing.</p></div>';
+  let data = null;
+  for (const proxy of proxies) {
+    try {
+      const resp = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
+      if (!resp.ok) continue;
+      data = await resp.json();
+      if (data.events) break;
+    } catch (e) { continue; }
   }
+
+  if (!data || !data.events) {
+    container.innerHTML = '';
+    empty.style.display = 'block';
+    empty.querySelector('p').textContent = 'Scores temporarily unavailable. Retrying...';
+    return;
+  }
+
+  const events = data.events;
+  if (events.length === 0) { container.innerHTML = ''; empty.style.display = 'block'; empty.querySelector('p').textContent = 'No games today.'; return; }
+  empty.style.display = 'none';
+
+  container.innerHTML = events.map(ev => {
+    const comp = ev.competitions?.[0] || {};
+    const competitors = comp.competitors || [];
+    const home = competitors.find(c => c.homeAway === 'home') || {};
+    const away = competitors.find(c => c.homeAway === 'away') || {};
+    const status = ev.status?.type?.name || '';
+    const detail = ev.status?.type?.shortDetail || ev.status?.type?.detail || '';
+    const homeScore = home.score || '0';
+    const awayScore = away.score || '0';
+    const homeName = home.team?.displayName || '';
+    const awayName = away.team?.displayName || '';
+    const homeLogo = home.team?.logo || '';
+    const awayLogo = away.team?.logo || '';
+    const homeWin = status === 'STATUS_FINAL' && parseInt(homeScore) > parseInt(awayScore);
+    const awayWin = status === 'STATUS_FINAL' && parseInt(awayScore) > parseInt(homeScore);
+    const statusClass = status === 'STATUS_IN_PROGRESS' ? 'live' : status === 'STATUS_FINAL' ? 'final' : 'pre';
+    const statusText = status === 'STATUS_IN_PROGRESS' ? detail : status === 'STATUS_FINAL' ? 'Final' : detail || 'Scheduled';
+
+    return '<div class="score-card">' +
+      '<div class="sc-header"><span class="badge ' + currentLeague + '">' + currentLeague.toUpperCase() + '</span>' +
+      '<span class="sc-status ' + statusClass + '">' + statusText + '</span></div>' +
+      '<div class="sc-team ' + (awayWin ? 'winner' : '') + '">' +
+      (awayLogo ? '<img src="' + awayLogo + '" style="width:18px;height:18px;margin-right:6px;vertical-align:middle">' : '') +
+      '<span class="name">' + awayName + '</span><span class="score">' + awayScore + '</span></div>' +
+      '<div class="sc-team ' + (homeWin ? 'winner' : '') + '">' +
+      (homeLogo ? '<img src="' + homeLogo + '" style="width:18px;height:18px;margin-right:6px;vertical-align:middle">' : '') +
+      '<span class="name">' + homeName + '</span><span class="score">' + homeScore + '</span></div>' +
+      '</div>';
+  }).join('');
+
+  const liveCount = events.filter(e => e.status?.type?.name === 'STATUS_IN_PROGRESS').length;
+  document.getElementById('liveIndicator').style.background = liveCount > 0 ? '#3fb950' : '#8b949e';
+  document.getElementById('liveIndicator').style.animation = liveCount > 0 ? 'pulse 2s infinite' : 'none';
+  document.getElementById('liveTimer').textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 }
 
 fetchScores();
