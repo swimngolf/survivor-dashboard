@@ -2265,8 +2265,9 @@ function render() {
 function buildTally(results) {
   const t = {};
   results.forEach(r => {
-    if (!t[r.pick]) t[r.pick] = { pick: r.pick, count: 0, league: r.league, game: r.game, date: r.date };
+    if (!t[r.pick]) t[r.pick] = { pick: r.pick, count: 0, league: r.league, game: r.game, date: r.date, time: r.time || '' };
     t[r.pick].count++;
+    if (!t[r.pick].time && r.time) t[r.pick].time = r.time;
   });
   return Object.values(t).sort((a, b) => b.count - a.count);
 }
@@ -2309,7 +2310,7 @@ function renderPickBars(tally) {
   const maxCount = tally.length > 0 ? tally[0].count : 1;
   container.innerHTML = tally.slice(0, 15).map(t => `
     <div class="pick-bar">
-      <span class="name"><span class="badge ${t.league.toLowerCase()}" style="font-size:10px;vertical-align:middle;margin-right:4px">${t.league}</span>${t.pick} <span style="color:#8b949e;font-size:11px">(${t.game})</span></span>
+      <span class="name"><span class="badge ${t.league.toLowerCase()}" style="font-size:10px;vertical-align:middle;margin-right:4px">${t.league}</span>${t.pick} <span style="color:#8b949e;font-size:11px">(${t.game}${t.time ? ' - ' + t.time : ''})</span></span>
       <div class="bar" style="width:${Math.max(t.count/maxCount*100, 4)}%;background:${LEAGUE_COLORS[t.league]||'#58a6ff'}"></div>
       <span class="count">${t.count}</span>
     </div>
