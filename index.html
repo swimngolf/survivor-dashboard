@@ -2309,9 +2309,12 @@ function getQualifiedPicks(db) {
 function renderPickBars(tally) {
   const container = document.getElementById('pickBars');
   const maxCount = tally.length > 0 ? tally[0].count : 1;
-  container.innerHTML = tally.slice(0, 15).map(t => {
+  const MAX_VISIBLE = 10;
+
+  container.innerHTML = tally.map((t, i) => {
     const timeStr = t.time ? ' · ' + t.time : '';
-    return `<div class="pick-bar">
+    const hidden = i >= MAX_VISIBLE ? ' style="display:none"' : '';
+    return `<div class="pick-bar pick-bar-item"${hidden}>
       <div>
         <div class="name"><span class="badge ${t.league.toLowerCase()}" style="font-size:10px;vertical-align:middle;margin-right:4px">${t.league}</span>${t.pick}</div>
         <div class="detail">${t.game}${timeStr}</div>
@@ -2320,6 +2323,22 @@ function renderPickBars(tally) {
       <span class="count">${t.count}</span>
     </div>`;
   }).join('');
+
+  // Add expand button if needed
+  if (tally.length > MAX_VISIBLE) {
+    container.innerHTML += `<div style="text-align:center;margin-top:8px" id="pickBarsExpand">
+      <button onclick="togglePickBars()" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:12px" id="pickBarsExpandText">Show all ${tally.length} picks &#9660;</button>
+    </div>`;
+  }
+}
+
+let pickBarsExpanded = false;
+function togglePickBars() {
+  pickBarsExpanded = !pickBarsExpanded;
+  document.querySelectorAll('.pick-bar-item').forEach((el, i) => {
+    if (i >= 10) el.style.display = pickBarsExpanded ? '' : 'none';
+  });
+  document.getElementById('pickBarsExpandText').innerHTML = pickBarsExpanded ? 'Show less &#9650;' : 'Show all picks &#9660;';
 }
 
 function renderLeagueChart(results) {
