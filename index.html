@@ -157,7 +157,7 @@ tr:hover td { background: #1c2128; }
         <button class="tab" onclick="switchLeague('nhl',this)">NHL</button>
         <button class="tab" onclick="switchLeague('ncaab',this)">NCAAB</button>
       </div>
-      <div id="liveScores" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;max-height:320px;overflow:hidden;transition:max-height 0.3s"></div>
+      <div id="liveScores" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
       <div id="scoresExpandBtn" style="display:none;text-align:center;margin-top:8px">
         <button onclick="toggleScoresExpand()" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:12px" id="scoresExpandText">Show all games &#9660;</button>
       </div>
@@ -2357,10 +2357,12 @@ function renderWinRateChart() {
 let liveCollapsed = false;
 let currentLeague = 'mlb';
 let scoresExpanded = false;
+const MAX_SCORES_VISIBLE = 4;
 
 function toggleScoresExpand() {
   scoresExpanded = !scoresExpanded;
-  document.getElementById('liveScores').style.maxHeight = scoresExpanded ? 'none' : '320px';
+  const cards = document.querySelectorAll('#liveScores .score-card');
+  cards.forEach((card, i) => { card.style.display = (scoresExpanded || i < MAX_SCORES_VISIBLE) ? '' : 'none'; });
   document.getElementById('scoresExpandText').innerHTML = scoresExpanded ? 'Show less &#9650;' : 'Show all games &#9660;';
 }
 
@@ -2380,8 +2382,6 @@ function toggleLiveScores() {
 function switchLeague(league, btn) {
   currentLeague = league;
   scoresExpanded = false;
-  document.getElementById('liveScores').style.maxHeight = '320px';
-  document.getElementById('scoresExpandText').innerHTML = 'Show all games &#9660;';
   document.querySelectorAll('#liveScoresWrapper .tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   fetchScores();
@@ -2394,6 +2394,7 @@ async function fetchScores() {
 
   // Try multiple CORS proxies in order
   const proxies = [
+    espnUrl,
     'https://corsproxy.io/?' + encodeURIComponent(espnUrl),
     'https://api.allorigins.win/raw?url=' + encodeURIComponent(espnUrl),
     'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(espnUrl)
@@ -2454,7 +2455,12 @@ async function fetchScores() {
   document.getElementById('liveIndicator').style.background = liveCount > 0 ? '#3fb950' : '#8b949e';
   document.getElementById('liveIndicator').style.animation = liveCount > 0 ? 'pulse 2s infinite' : 'none';
   document.getElementById('liveTimer').textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  document.getElementById('scoresExpandBtn').style.display = events.length > 4 ? 'block' : 'none';
+
+  // Show only first 4, hide the rest
+  const cards = document.querySelectorAll('#liveScores .score-card');
+  cards.forEach((card, i) => { card.style.display = (scoresExpanded || i < MAX_SCORES_VISIBLE) ? '' : 'none'; });
+  document.getElementById('scoresExpandBtn').style.display = events.length > MAX_SCORES_VISIBLE ? 'block' : 'none';
+  document.getElementById('scoresExpandText').innerHTML = scoresExpanded ? 'Show less &#9650;' : ('Show all ' + events.length + ' games &#9660;');
 }
 
 fetchScores();
