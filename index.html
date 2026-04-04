@@ -159,7 +159,7 @@ tr:hover td { background: #1c2128; }
 
   <!-- Outcome History -->
   <div class="panel" style="margin-bottom:24px">
-    <h2>📋 Outcome History (3+ Consensus Picks Only)</h2>
+    <h2>📋 Outcome History (4+ Consensus Picks Only)</h2>
     <table id="outcomeTable">
       <thead>
         <tr><th>Date</th><th>Total Picks</th><th>Wins</th><th>Losses</th><th>Win Rate</th><th>Top Pick</th></tr>
@@ -169,6 +169,16 @@ tr:hover td { background: #1c2128; }
     <div class="empty-state" id="emptyOutcomes" style="display:none">
       <p>No outcome data yet. Outcomes are checked daily at 8am.</p>
     </div>
+  </div>
+
+  <!-- Win Rate by Pick Count -->
+  <div class="panel" style="margin-bottom:24px">
+    <h2>📊 Win Rate by Pick Count</h2>
+    <table id="pickCountTable">
+      <thead><tr><th># of People</th><th>Total Picks</th><th>Wins</th><th>Losses</th><th>Win Rate</th></tr></thead>
+      <tbody id="pickCountBody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyPickCount" style="display:none"><p>No outcome data yet.</p></div>
   </div>
 
   <!-- Live Scores -->
@@ -211,7 +221,7 @@ tr:hover td { background: #1c2128; }
       <div class="chart-container"><canvas id="gameChart"></canvas></div>
     </div>
     <div class="panel">
-      <h2>📈 Overall Win Rate by League - Since Inception (3+ Consensus Picks Only)</h2>
+      <h2>📈 Overall Win Rate by League - Since Inception (4+ Consensus Picks Only)</h2>
       <div class="chart-container"><canvas id="winRateChart"></canvas></div>
     </div>
   </div>
@@ -3341,7 +3351,7 @@ function render() {
   document.getElementById('statTopPick').textContent = topPick ? topPick.pick : '--';
   document.getElementById('statTopPickSub').innerHTML = topPick ? `${topPick.count} picks - <span class="badge ${topPick.league.toLowerCase()}">${topPick.league}</span> ${topPick.game}` : '';
 
-  // Weekly Win Rate (current week, Mon-Sun, 3+ consensus, 1 per unique pick)
+  // Weekly Win Rate (current week, Mon-Sun, 4+ consensus, 1 per unique pick)
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
   const dayOfWeek = now.getDay(); // 0=Sun
   const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
@@ -3368,14 +3378,14 @@ function render() {
   document.getElementById('statTopStreak').textContent = topStreak.streak;
   document.getElementById('statTopStreakSub').textContent = topStreak.member;
 
-  // Overall Win Rate (outcomes are already pre-filtered to 3+ consensus at injection time)
+  // Overall Win Rate (outcomes are already pre-filtered to 4+ consensus at injection time)
   const allOutcomes = Object.values(db.outcomes).flat();
   const totalW = allOutcomes.filter(o => o.outcome === 'WIN').length;
   const totalL = allOutcomes.filter(o => o.outcome === 'LOSS').length;
   const totalGraded = totalW + totalL;
   document.getElementById('statWinRate').textContent = totalGraded > 0 ? `${Math.round(totalW / totalGraded * 100)}%` : 'N/A';
   document.getElementById('statWinRate').className = 'value ' + (totalGraded > 0 && totalW/totalGraded >= 0.5 ? 'green' : totalGraded > 0 ? 'red' : '');
-  document.getElementById('statWinRateSub').textContent = totalGraded > 0 ? `${totalW}W - ${totalL}L (picks with 3+ consensus)` : 'Tracks picks with 3+ consensus only';
+  document.getElementById('statWinRateSub').textContent = totalGraded > 0 ? `${totalW}W - ${totalL}L (picks with 4+ consensus)` : 'Tracks picks with 4+ consensus only';
 
   renderPickBars(tally);
   renderLeagueChart(results);
@@ -3385,6 +3395,7 @@ function render() {
   renderVolumeChart();
   renderRecurringTable();
   renderOutcomeHistory();
+  renderPickCountStats();
   renderWinRateChart();
 }
 
@@ -3426,7 +3437,7 @@ function getQualifiedPicks(db) {
   Object.values(db.days).forEach(day => {
     const tally = {};
     (day.results || []).forEach(r => { tally[r.pick] = (tally[r.pick] || 0) + 1; });
-    Object.entries(tally).forEach(([pick, count]) => { if (count >= 3) qualified.add(pick); });
+    Object.entries(tally).forEach(([pick, count]) => { if (count >= 4) qualified.add(pick); });
   });
   return qualified;
 }
@@ -3616,7 +3627,7 @@ function renderRecurringTable() {
     const dailyTally = {};
     (day.results || []).forEach(r => { dailyTally[r.pick] = (dailyTally[r.pick] || 0) + 1; });
     (day.results || []).forEach(r => {
-      if (dailyTally[r.pick] < 3) return;
+      if (dailyTally[r.pick] < 4) return;
       if (!allPicks[r.pick]) allPicks[r.pick] = { count: 0, wins: 0, losses: 0, eventDate: r.date || '', league: r.league, game: r.game };
       allPicks[r.pick].count++;
       if (r.date) allPicks[r.pick].eventDate = r.date;
@@ -3640,7 +3651,7 @@ function renderOutcomeHistory() {
   tbody.innerHTML = dates.map(date => {
     const oc = db.outcomes[date];
     const arr = Array.isArray(oc) ? oc : Object.values(oc);
-    // Outcomes are already pre-filtered to 3+ consensus at injection time
+    // Outcomes are already pre-filtered to 4+ consensus at injection time
     const wins = arr.filter(o => o.outcome === 'WIN').length;
     const losses = arr.filter(o => o.outcome === 'LOSS').length;
     const total = wins + losses;
@@ -3654,11 +3665,45 @@ function renderOutcomeHistory() {
   }).join('');
 }
 
+function renderPickCountStats() {
+  const tbody = document.getElementById('pickCountBody');
+  const empty = document.getElementById('emptyPickCount');
+
+  // For each day, get the pick tally (how many people per pick), then match to outcomes
+  const countBuckets = {}; // { "4": { wins: 0, losses: 0 }, "5": { ... }, ... }
+
+  Object.entries(db.outcomes).forEach(([date, arr]) => {
+    const dayData = db.days[date];
+    if (!dayData) return;
+    const pickTally = {};
+    (dayData.results || []).forEach(r => { pickTally[r.pick] = (pickTally[r.pick] || 0) + 1; });
+
+    (Array.isArray(arr) ? arr : []).forEach(o => {
+      const count = pickTally[o.pick] || 0;
+      if (count < 4) return;
+      const bucket = String(count);
+      if (!countBuckets[bucket]) countBuckets[bucket] = { wins: 0, losses: 0 };
+      if (o.outcome === 'WIN') countBuckets[bucket].wins++;
+      else if (o.outcome === 'LOSS') countBuckets[bucket].losses++;
+    });
+  });
+
+  const sorted = Object.entries(countBuckets).sort((a, b) => parseInt(b[0]) - parseInt(a[0]));
+  if (sorted.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = sorted.map(([count, data]) => {
+    const total = data.wins + data.losses;
+    const wr = total > 0 ? Math.round(data.wins / total * 100) + '%' : 'N/A';
+    return `<tr><td>${count} people</td><td>${total}</td><td style="color:#3fb950">${data.wins}</td><td style="color:#f85149">${data.losses}</td><td>${wr}</td></tr>`;
+  }).join('');
+}
+
 function renderWinRateChart() {
   const leagues = ['NHL', 'NBA', 'MLB', 'NCAAB'];
   const wins = leagues.map(() => 0);
   const losses = leagues.map(() => 0);
-  // Outcomes are already pre-filtered to 3+ consensus at injection time
+  // Outcomes are already pre-filtered to 4+ consensus at injection time
   Object.values(db.outcomes).flat().forEach(o => {
     const idx = leagues.indexOf(o.league);
     if (idx === -1) return;
