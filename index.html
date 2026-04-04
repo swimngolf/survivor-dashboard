@@ -3129,85 +3129,19 @@ const SEED_DATA = {
   },
   "outcomes": {
     "2026-04-02": [
-      {
-        "pick": "Over 6.5",
-        "league": "NHL",
-        "game": "Washington vs New Jersey",
-        "outcome": "WIN",
-        "score": "3-7"
-      },
-      {
-        "pick": "LAL +9.5",
-        "league": "NBA",
-        "game": "L.A. Lakers vs Oklahoma City",
-        "outcome": "LOSS",
-        "score": "96-139"
-      },
-      {
-        "pick": "Over 6.0",
-        "league": "NHL",
-        "game": "Calgary vs Vegas",
-        "outcome": "WIN",
-        "score": "3-6"
-      },
-      {
-        "pick": "ATL -120",
-        "league": "MLB",
-        "game": "Atlanta vs Arizona",
-        "outcome": "WIN",
-        "score": "17-2"
-      },
-      {
-        "pick": "Under 9.5",
-        "league": "MLB",
-        "game": "Minnesota vs Kansas City",
-        "outcome": "WIN",
-        "score": "5-1"
-      },
-      {
-        "pick": "Over 5.5",
-        "league": "NHL",
-        "game": "Detroit vs Philadelphia",
-        "outcome": "WIN",
-        "score": "4-2"
-      }
+      { "pick": "Over 6.5", "league": "NHL", "game": "Washington vs New Jersey", "outcome": "WIN", "score": "3-7", "pickCount": 5 },
+      { "pick": "LAL +9.5", "league": "NBA", "game": "L.A. Lakers vs Oklahoma City", "outcome": "LOSS", "score": "96-139", "pickCount": 5 },
+      { "pick": "Over 6.0", "league": "NHL", "game": "Calgary vs Vegas", "outcome": "WIN", "score": "3-6", "pickCount": 3 },
+      { "pick": "ATL -120", "league": "MLB", "game": "Atlanta vs Arizona", "outcome": "WIN", "score": "17-2", "pickCount": 5 },
+      { "pick": "Under 9.5", "league": "MLB", "game": "Minnesota vs Kansas City", "outcome": "WIN", "score": "5-1", "pickCount": 5 },
+      { "pick": "Over 5.5", "league": "NHL", "game": "Detroit vs Philadelphia", "outcome": "WIN", "score": "4-2", "pickCount": 5 }
     ],
     "2026-04-03": [
-      {
-        "pick": "Under 7.5",
-        "league": "MLB",
-        "game": "St. Louis vs Detroit",
-        "outcome": "WIN",
-        "score": null
-      },
-      {
-        "pick": "BOS -102",
-        "league": "MLB",
-        "game": "San Diego vs Boston",
-        "outcome": "WIN",
-        "score": null
-      },
-      {
-        "pick": "Over 7.5",
-        "league": "MLB",
-        "game": "Tampa Bay vs Minnesota",
-        "outcome": "WIN",
-        "score": null
-      },
-      {
-        "pick": "CHC -120",
-        "league": "MLB",
-        "game": "Chi. Cubs vs Cleveland",
-        "outcome": "LOSS",
-        "score": null
-      },
-      {
-        "pick": "ORL -6.5",
-        "league": "NBA",
-        "game": "Orlando vs Charlotte",
-        "outcome": "WIN",
-        "score": null
-      }
+      { "pick": "Under 7.5", "league": "MLB", "game": "St. Louis vs Detroit", "outcome": "WIN", "score": null, "pickCount": 4 },
+      { "pick": "BOS -102", "league": "MLB", "game": "San Diego vs Boston", "outcome": "WIN", "score": null, "pickCount": 5 },
+      { "pick": "Over 7.5", "league": "MLB", "game": "Tampa Bay vs Minnesota", "outcome": "WIN", "score": null, "pickCount": 4 },
+      { "pick": "CHC -120", "league": "MLB", "game": "Chi. Cubs vs Cleveland", "outcome": "LOSS", "score": null, "pickCount": 4 },
+      { "pick": "ORL -6.5", "league": "NBA", "game": "Orlando vs Charlotte", "outcome": "WIN", "score": null, "pickCount": 4 }
     ]
   },
   "meta": {
@@ -3669,17 +3603,11 @@ function renderPickCountStats() {
   const tbody = document.getElementById('pickCountBody');
   const empty = document.getElementById('emptyPickCount');
 
-  // For each day, get the pick tally (how many people per pick), then match to outcomes
-  const countBuckets = {}; // { "4": { wins: 0, losses: 0 }, "5": { ... }, ... }
+  const countBuckets = {};
 
-  Object.entries(db.outcomes).forEach(([date, arr]) => {
-    const dayData = db.days[date];
-    if (!dayData) return;
-    const pickTally = {};
-    (dayData.results || []).forEach(r => { pickTally[r.pick] = (pickTally[r.pick] || 0) + 1; });
-
+  Object.values(db.outcomes).forEach(arr => {
     (Array.isArray(arr) ? arr : []).forEach(o => {
-      const count = pickTally[o.pick] || 0;
+      const count = o.pickCount || 0;
       if (count < 4) return;
       const bucket = String(count);
       if (!countBuckets[bucket]) countBuckets[bucket] = { wins: 0, losses: 0 };
@@ -3692,11 +3620,15 @@ function renderPickCountStats() {
   if (sorted.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
+  // Add totals row
+  let totalW = 0, totalL = 0;
+  sorted.forEach(([, d]) => { totalW += d.wins; totalL += d.losses; });
+
   tbody.innerHTML = sorted.map(([count, data]) => {
     const total = data.wins + data.losses;
     const wr = total > 0 ? Math.round(data.wins / total * 100) + '%' : 'N/A';
     return `<tr><td>${count} people</td><td>${total}</td><td style="color:#3fb950">${data.wins}</td><td style="color:#f85149">${data.losses}</td><td>${wr}</td></tr>`;
-  }).join('');
+  }).join('') + `<tr style="border-top:2px solid #30363d;font-weight:600"><td>Total</td><td>${totalW+totalL}</td><td style="color:#3fb950">${totalW}</td><td style="color:#f85149">${totalL}</td><td>${totalW+totalL>0?Math.round(totalW/(totalW+totalL)*100)+'%':'N/A'}</td></tr>`;
 }
 
 function renderWinRateChart() {
