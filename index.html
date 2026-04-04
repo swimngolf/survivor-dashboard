@@ -2932,7 +2932,7 @@ function render() {
   document.getElementById('statTopPickSub').innerHTML = topPick ? `${topPick.count} picks - <span class="badge ${topPick.league.toLowerCase()}">${topPick.league}</span> ${topPick.game}` : '';
 
   // Weekly Win Rate (current week, Mon-Sun, 3+ consensus, 1 per unique pick)
-  const now = new Date();
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
   const dayOfWeek = now.getDay(); // 0=Sun
   const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
   const weekStart = new Date(now);
@@ -3394,7 +3394,7 @@ async function fetchScores() {
   const liveCount = events.filter(e => e.status?.type?.name === 'STATUS_IN_PROGRESS').length;
   document.getElementById('liveIndicator').style.background = liveCount > 0 ? '#3fb950' : '#8b949e';
   document.getElementById('liveIndicator').style.animation = liveCount > 0 ? 'pulse 2s infinite' : 'none';
-  document.getElementById('liveTimer').textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  document.getElementById('liveTimer').textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) + ' EST';
 
   // Show only first 4, hide the rest
   const cards = document.querySelectorAll('#liveScores .score-card');
