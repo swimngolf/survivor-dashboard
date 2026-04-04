@@ -2899,12 +2899,12 @@ function getCurrentDate() {
 }
 
 function prevDay() {
-  if (currentDateIdx < sortedDates.length - 1) { currentDateIdx++; render(); }
+  if (currentDateIdx < sortedDates.length - 1) { currentDateIdx++; render(); fetchScores(); }
 }
 function nextDay() {
-  if (currentDateIdx > 0) { currentDateIdx--; render(); }
+  if (currentDateIdx > 0) { currentDateIdx--; render(); fetchScores(); }
 }
-function loadToday() { currentDateIdx = 0; dateRangeMode = false; document.getElementById('dateRangeSelect').value = ''; document.getElementById('customRangeWrap').style.display = 'none'; render(); }
+function loadToday() { currentDateIdx = 0; dateRangeMode = false; document.getElementById('dateRangeSelect').value = ''; document.getElementById('customRangeWrap').style.display = 'none'; render(); fetchScores(); }
 
 let dateRangeMode = false;
 let dateRangeFrom = null;
@@ -3381,12 +3381,21 @@ function toggleScoresExpand() {
   document.getElementById('scoresExpandText').innerHTML = scoresExpanded ? 'Show less &#9650;' : 'Show all games &#9660;';
 }
 
-const ESPN_URLS = {
+const ESPN_BASE = {
   mlb: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
   nba: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
   nhl: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
   ncaab: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'
 };
+
+function getEspnUrl(league) {
+  const base = ESPN_BASE[league];
+  const date = getCurrentDate();
+  if (date) {
+    return base + '?dates=' + date.replace(/-/g, '');
+  }
+  return base;
+}
 
 function toggleLiveScores() {
   liveCollapsed = !liveCollapsed;
@@ -3405,7 +3414,7 @@ function switchLeague(league, btn) {
 async function fetchScores() {
   const container = document.getElementById('liveScores');
   const empty = document.getElementById('emptyScores');
-  const espnUrl = ESPN_URLS[currentLeague];
+  const espnUrl = getEspnUrl(currentLeague);
 
   // Try multiple CORS proxies in order
   const proxies = [
