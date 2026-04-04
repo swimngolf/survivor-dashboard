@@ -3506,9 +3506,22 @@ function renderPicksPage() {
 function renderFutureTable(futurePicks) {
   const tbody = document.getElementById('futureBody');
   const empty = document.getElementById('emptyFuture');
-  if (futurePicks.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
+
+  // Filter to only picks with dates strictly after today (EST)
+  const todayEST = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const todayStr = todayEST.getFullYear() + '-' + String(todayEST.getMonth()+1).padStart(2,'0') + '-' + String(todayEST.getDate()).padStart(2,'0');
+  const months = { Jan:'01', Feb:'02', Mar:'03', Apr:'04', May:'05', Jun:'06', Jul:'07', Aug:'08', Sep:'09', Oct:'10', Nov:'11', Dec:'12' };
+
+  const filtered = futurePicks.filter(r => {
+    const m = (r.date || '').match(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d+),\s+(\d+)/);
+    if (!m) return false;
+    const pickDate = m[3] + '-' + months[m[1]] + '-' + m[2].padStart(2, '0');
+    return pickDate > todayStr;
+  }).slice(0, 10);
+
+  if (filtered.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
-  tbody.innerHTML = futurePicks.map(r => {
+  tbody.innerHTML = filtered.map(r => {
     const leagueClass = r.league.toLowerCase();
     return `<tr>
       <td>${r.rank}</td>
