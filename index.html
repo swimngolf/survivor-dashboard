@@ -2718,12 +2718,10 @@ function render() {
   document.getElementById('statTopStreak').textContent = topStreak.streak;
   document.getElementById('statTopStreakSub').textContent = topStreak.member;
 
-  // Win rate (only picks with distribution of 3+)
+  // Overall Win Rate (outcomes are already pre-filtered to 3+ consensus at injection time)
   const allOutcomes = Object.values(db.outcomes).flat();
-  const qualifiedPicks = getQualifiedPicks(db); // picks that had 3+ people on them
-  const qualifiedOutcomes = allOutcomes.filter(o => qualifiedPicks.has(o.pick));
-  const totalW = qualifiedOutcomes.filter(o => o.outcome === 'WIN').length;
-  const totalL = qualifiedOutcomes.filter(o => o.outcome === 'LOSS').length;
+  const totalW = allOutcomes.filter(o => o.outcome === 'WIN').length;
+  const totalL = allOutcomes.filter(o => o.outcome === 'LOSS').length;
   const totalGraded = totalW + totalL;
   document.getElementById('statWinRate').textContent = totalGraded > 0 ? `${Math.round(totalW / totalGraded * 100)}%` : 'N/A';
   document.getElementById('statWinRate').className = 'value ' + (totalGraded > 0 && totalW/totalGraded >= 0.5 ? 'green' : totalGraded > 0 ? 'red' : '');
@@ -2992,26 +2990,17 @@ function renderOutcomeHistory() {
   tbody.innerHTML = dates.map(date => {
     const oc = db.outcomes[date];
     const arr = Array.isArray(oc) ? oc : Object.values(oc);
-    // Build daily tally from picks data to find 3+ consensus picks
-    const dayData = db.days[date];
-    const dailyTally = {};
-    (dayData?.results || []).forEach(r => { dailyTally[r.pick] = (dailyTally[r.pick] || 0) + 1; });
-    const qualifiedArr = arr.filter(o => dailyTally[o.pick] >= 3);
-    const wins = qualifiedArr.filter(o => o.outcome === 'WIN').length;
-    const losses = qualifiedArr.filter(o => o.outcome === 'LOSS').length;
+    // Outcomes are already pre-filtered to 3+ consensus at injection time
+    const wins = arr.filter(o => o.outcome === 'WIN').length;
+    const losses = arr.filter(o => o.outcome === 'LOSS').length;
     const total = wins + losses;
     const wr = total > 0 ? `${Math.round(wins/total*100)}%` : 'N/A';
-    // Find the most popular qualified pick for this day
-    const qualifiedTally = {};
-    (dayData?.results || []).forEach(r => {
-      if (dailyTally[r.pick] >= 3) {
-        if (!qualifiedTally[r.pick]) qualifiedTally[r.pick] = { count: 0, league: r.league, game: r.game };
-        qualifiedTally[r.pick].count++;
-      }
-    });
-    const topEntry = Object.entries(qualifiedTally).sort((a,b) => b[1].count - a[1].count)[0];
-    const topPickCell = topEntry ? `<span class="badge ${topEntry[1].league.toLowerCase()}" style="font-size:10px;margin-right:3px">${topEntry[1].league}</span>${topEntry[0]} (${topEntry[1].count}x)` : '--';
-    return `<tr><td>${formatDate(date)}</td><td>${qualifiedArr.length}</td><td style="color:#3fb950">${wins}</td><td style="color:#f85149">${losses}</td><td>${wr}</td><td>${topPickCell}</td></tr>`;
+    // Find the most popular pick from outcomes
+    const pickCounts = {};
+    arr.forEach(o => { pickCounts[o.pick] = (pickCounts[o.pick] || 0) + 1; });
+    const topPick = arr.length > 0 ? arr[0] : null;
+    const topPickCell = topPick ? `<span class="badge ${topPick.league.toLowerCase()}" style="font-size:10px;margin-right:3px">${topPick.league}</span>${topPick.pick}` : '--';
+    return `<tr><td>${formatDate(date)}</td><td>${arr.length}</td><td style="color:#3fb950">${wins}</td><td style="color:#f85149">${losses}</td><td>${wr}</td><td>${topPickCell}</td></tr>`;
   }).join('');
 }
 
@@ -3019,10 +3008,8 @@ function renderWinRateChart() {
   const leagues = ['NHL', 'NBA', 'MLB', 'NCAAB'];
   const wins = leagues.map(() => 0);
   const losses = leagues.map(() => 0);
-  const qualifiedPicks = getQualifiedPicks(db);
-  // Tally wins/losses by league, only for qualified picks (3+ consensus)
+  // Outcomes are already pre-filtered to 3+ consensus at injection time
   Object.values(db.outcomes).flat().forEach(o => {
-    if (!qualifiedPicks.has(o.pick)) return;
     const idx = leagues.indexOf(o.league);
     if (idx === -1) return;
     if (o.outcome === 'WIN') wins[idx]++;
