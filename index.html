@@ -3460,7 +3460,7 @@ function picksPageNext() {
 }
 
 function renderPicksTable(results, outcomes) {
-  cachedPicksResults = results;
+  cachedPicksResults = results.slice().sort((a, b) => (a.rank || 999) - (b.rank || 999));
   cachedPicksOutcomes = outcomes;
   picksPage = 0;
   renderPicksPage();
