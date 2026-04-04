@@ -162,7 +162,7 @@ tr:hover td { background: #1c2128; }
     <h2>📋 Outcome History (3+ Consensus Picks Only)</h2>
     <table id="outcomeTable">
       <thead>
-        <tr><th>Date</th><th>Total Picks</th><th>Wins</th><th>Losses</th><th>Win Rate</th><th>Top Pick</th><th>Top Pick Result</th></tr>
+        <tr><th>Date</th><th>Total Picks</th><th>Wins</th><th>Losses</th><th>Win Rate</th><th>Top Pick</th></tr>
       </thead>
       <tbody id="outcomeBody"></tbody>
     </table>
@@ -3251,9 +3251,7 @@ function renderOutcomeHistory() {
     });
     const topEntry = Object.entries(qualifiedTally).sort((a,b) => b[1].count - a[1].count)[0];
     const topPickCell = topEntry ? `<span class="badge ${topEntry[1].league.toLowerCase()}" style="font-size:10px;margin-right:3px">${topEntry[1].league}</span>${topEntry[0]} (${topEntry[1].count}x)` : '--';
-    const topPickOutcome = topEntry ? (qualifiedArr.find(o => o.pick === topEntry[0])?.outcome || '--') : '--';
-    const topResultBadge = topPickOutcome === 'WIN' ? '<span class="badge win">WIN</span>' : topPickOutcome === 'LOSS' ? '<span class="badge loss">LOSS</span>' : topPickOutcome;
-    return `<tr><td>${formatDate(date)}</td><td>${qualifiedArr.length}</td><td style="color:#3fb950">${wins}</td><td style="color:#f85149">${losses}</td><td>${wr}</td><td>${topPickCell}</td><td>${topResultBadge}</td></tr>`;
+    return `<tr><td>${formatDate(date)}</td><td>${qualifiedArr.length}</td><td style="color:#3fb950">${wins}</td><td style="color:#f85149">${losses}</td><td>${wr}</td><td>${topPickCell}</td></tr>`;
   }).join('');
 }
 
