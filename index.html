@@ -90,31 +90,45 @@ tr:hover td { background: #1c2128; }
 /* Mobile responsive */
 @media (max-width: 768px) {
   .header { flex-direction: column; gap: 12px; padding: 16px; }
-  .header h1 { font-size: 18px; }
-  .date-nav { flex-wrap: wrap; justify-content: center; }
-  .container { padding: 12px; }
-  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .header h1 { font-size: 18px; animation: none; }
+  .header .meta span { font-size: 16px !important; }
+  .date-nav { flex-wrap: wrap; justify-content: center; gap: 6px; width: 100%; }
+  .date-nav button, .date-nav select, .date-nav input { font-size: 11px; padding: 5px 8px; }
+  .date-nav .current-date { font-size: 13px; width: 100%; text-align: center; }
+  #customRangeWrap { width: 100%; justify-content: center; }
+  .container { padding: 10px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .stats-row .stat-card:last-child { grid-column: span 2; }
-  .stat-card { padding: 14px; }
-  .stat-card .value { font-size: 22px; }
-  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .stat-card { padding: 12px; }
+  .stat-card .label { font-size: 10px; }
+  .stat-card .value { font-size: 20px; }
+  .stat-card .sub { font-size: 10px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 12px; }
   .pick-bar { grid-template-columns: 1fr auto auto; }
   .pick-bar .name { font-size: 11px; }
-  .chart-container { height: 220px; }
+  .pick-bar .detail { font-size: 10px; }
+  .chart-container { height: 200px; }
   table { display: block; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; }
-  th, td { padding: 7px 8px; font-size: 12px; }
-  .panel { padding: 14px; }
-  .panel h2 { font-size: 14px; }
+  th, td { padding: 6px 8px; font-size: 11px; }
+  .panel { padding: 12px; margin-bottom: 16px !important; }
+  .panel h2 { font-size: 13px; }
+  .score-card { padding: 10px; }
+  #liveScores { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+  .tab { padding: 5px 10px; font-size: 11px; }
 }
 
 @media (max-width: 480px) {
   .stats-row { grid-template-columns: 1fr; }
   .stats-row .stat-card:last-child { grid-column: span 1; }
-  .stat-card .value { font-size: 20px; }
-  .header h1 { font-size: 16px; }
-  .date-nav button { padding: 5px 8px; font-size: 12px; }
-  .date-nav .current-date { font-size: 13px; }
-  .badge { font-size: 10px; padding: 1px 6px; }
+  .stat-card .value { font-size: 18px; }
+  .header h1 { font-size: 15px; }
+  .header .meta span { font-size: 14px !important; }
+  .date-nav button, .date-nav select { font-size: 10px; padding: 4px 6px; }
+  .date-nav .current-date { font-size: 12px; }
+  .badge { font-size: 9px; padding: 1px 5px; }
+  #liveScores { grid-template-columns: 1fr; }
+  .pick-bar .name { font-size: 10px; }
+  .pick-bar .count { font-size: 11px; }
 }
 </style>
 </head>
