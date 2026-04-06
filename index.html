@@ -7047,7 +7047,8 @@ function render() {
   const weekStart = new Date(now);
   weekStart.setDate(now.getDate() - mondayOffset);
   weekStart.setHours(0,0,0,0);
-  const weekStartStr = weekStart.toISOString().slice(0,10);
+  // Format as YYYY-MM-DD without timezone conversion
+  const weekStartStr = weekStart.getFullYear() + '-' + String(weekStart.getMonth()+1).padStart(2,'0') + '-' + String(weekStart.getDate()).padStart(2,'0');
 
   let weekW = 0, weekL = 0;
   Object.entries(db.outcomes).forEach(([oDate, arr]) => {
@@ -7061,7 +7062,7 @@ function render() {
   const weekTotal = weekW + weekL;
   document.getElementById('statWeeklyWin').textContent = weekTotal > 0 ? `${Math.round(weekW / weekTotal * 100)}%` : 'N/A';
   document.getElementById('statWeeklyWin').className = 'value ' + (weekTotal > 0 && weekW/weekTotal >= 0.5 ? 'green' : weekTotal > 0 ? 'red' : '');
-  document.getElementById('statWeeklyWinSub').textContent = weekTotal > 0 ? `${weekW}W - ${weekL}L this week` : 'No outcomes this week yet';
+  document.getElementById('statWeeklyWinSub').textContent = weekTotal > 0 ? `${weekW}W - ${weekL}L (${formatDate(weekStartStr)} - now)` : `Week of ${formatDate(weekStartStr)}`;
 
   const topStreak = results.reduce((max, r) => parseInt(r.streak) > parseInt(max.streak) ? r : max, results[0] || { streak: '0', member: '--' });
   document.getElementById('statTopStreak').textContent = topStreak.streak;
