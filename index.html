@@ -16314,59 +16314,11 @@ const SEED_DATA = {
         "outcome": "LOSS",
         "score": "7-1",
         "pickCount": 4
-      },
-      {
-        "pick": "Over 6.5",
-        "league": "MLB",
-        "game": "Pittsburgh vs Chi. Cubs",
-        "outcome": "WIN",
-        "score": "4-3",
-        "pickCount": 6
-      },
-      {
-        "pick": "TOR -130",
-        "league": "MLB",
-        "game": "Minnesota vs Toronto",
-        "outcome": "LOSS",
-        "score": "7-4",
-        "pickCount": 4
-      },
-      {
-        "pick": "CLE +7.5",
-        "league": "NBA",
-        "game": "Cleveland vs Atlanta",
-        "outcome": "WIN",
-        "score": "6-0",
-        "pickCount": 4
-      },
-      {
-        "pick": "Over 8.5",
-        "league": "MLB",
-        "game": "Miami vs Detroit",
-        "outcome": "LOSS",
-        "score": "1-6",
-        "pickCount": 4
-      },
-      {
-        "pick": "BAL -125",
-        "league": "MLB",
-        "game": "San Francisco vs Baltimore",
-        "outcome": "WIN",
-        "score": "2-6",
-        "pickCount": 10
-      },
-      {
-        "pick": "SF +105",
-        "league": "MLB",
-        "game": "San Francisco vs Baltimore",
-        "outcome": "LOSS",
-        "score": "2-6",
-        "pickCount": 4
       }
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 12, 2026 at 9:08 AM EST"
+    "lastUpdated": "Apr 12, 2026 at 9:13 AM EST"
   }
 };
 
@@ -16821,17 +16773,35 @@ function renderOutcomeHistory() {
   tbody.innerHTML = dates.map(date => {
     const oc = db.outcomes[date];
     const arr = Array.isArray(oc) ? oc : Object.values(oc);
-    // Outcomes are already pre-filtered to 4+ consensus at injection time
-    const wins = arr.filter(o => o.outcome === 'WIN').length;
-    const losses = arr.filter(o => o.outcome === 'LOSS').length;
+
+    // Rebuild tally from the day's results using the same logic as pick distribution
+    const dayResults = (db.days[date]?.results || []).filter(r => pickDateMatchesScrapeDate(r.date, date));
+    const dayTally = buildTally(dayResults);
+    const tally4 = dayTally.filter(t => t.count >= 4);
+
+    // Match outcomes to tally entries (by pick+game) and enrich with pickCount
+    const enriched = arr.map(o => {
+      const tallyMatch = tally4.find(t => t.pick === o.pick && t.game === o.game) ||
+        tally4.find(t => t.pick === o.pick && t.game && o.game && (t.game.toLowerCase().includes(o.game.toLowerCase().split(' vs ')[0]) || o.game.toLowerCase().includes(t.game.toLowerCase().split(' vs ')[0])));
+      return { ...o, pickCount: tallyMatch ? tallyMatch.count : (o.pickCount || 0) };
+    }).filter(o => o.pickCount >= 4);
+
+    const wins = enriched.filter(o => o.outcome === 'WIN').length;
+    const losses = enriched.filter(o => o.outcome === 'LOSS').length;
     const total = wins + losses;
     const wr = total > 0 ? `${Math.round(wins/total*100)}%` : 'N/A';
-    // Find the most popular pick from outcomes
-    const pickCounts = {};
-    // Find the pick with the highest pickCount (most popular)
-    const topPick = arr.reduce((best, o) => (!best || (o.pickCount || 0) > (best.pickCount || 0)) ? o : best, null);
-    const topPickCell = topPick ? `<span class="badge ${topPick.league.toLowerCase()}" style="font-size:10px;margin-right:3px">${topPick.league}</span>${topPick.pick} (${topPick.pickCount || '?'}x) <span class="badge ${topPick.outcome === 'WIN' ? 'win' : 'loss'}">${topPick.outcome}</span>` : '--';
-    return `<tr><td>${formatDate(date)}</td><td>${arr.length}</td><td style="color:#3fb950">${wins}</td><td style="color:#f85149">${losses}</td><td>${wr}</td><td>${topPickCell}</td></tr>`;
+
+    // Top pick = the same top pick from the tally (matches pick distribution and stat card)
+    const tallyTop = tally4[0];
+    let topPickCell = '--';
+    if (tallyTop) {
+      // Find outcome for this tally top pick
+      const topOutcome = enriched.find(o => o.pick === tallyTop.pick && o.game === tallyTop.game) ||
+        enriched.find(o => o.pick === tallyTop.pick && o.game && tallyTop.game && (o.game.toLowerCase().includes(tallyTop.game.toLowerCase().split(' vs ')[0]) || tallyTop.game.toLowerCase().includes(o.game.toLowerCase().split(' vs ')[0])));
+      const badge = topOutcome ? ` <span class="badge ${topOutcome.outcome === 'WIN' ? 'win' : 'loss'}">${topOutcome.outcome}</span>` : '';
+      topPickCell = `<span class="badge ${tallyTop.league.toLowerCase()}" style="font-size:10px;margin-right:3px">${tallyTop.league}</span>${tallyTop.pick} (${tallyTop.count}x)${badge}`;
+    }
+    return `<tr><td>${formatDate(date)}</td><td>${enriched.length}</td><td style="color:#3fb950">${wins}</td><td style="color:#f85149">${losses}</td><td>${wr}</td><td>${topPickCell}</td></tr>`;
   }).join('');
 }
 
