@@ -16326,7 +16326,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 12, 2026 at 9:19 AM EST"
+    "lastUpdated": "Apr 12, 2026 at 9:21 AM EST"
   }
 };
 
@@ -16478,8 +16478,9 @@ function render() {
     if (matched?.outcome === 'WIN') topPickW++;
     else if (matched?.outcome === 'LOSS') topPickL++;
   });
-  const topPickRecord = (topPickW + topPickL) > 0 ? ` · Top picks: ${topPickW}W-${topPickL}L` : '';
-  document.getElementById('statTopPickSub').innerHTML = topPick ? `${topPick.count} picks - <span class="badge ${topPick.league.toLowerCase()}">${topPick.league}</span> ${topPick.game}${topPickRecord}` : '';
+  const topPickPct = (topPickW + topPickL) > 0 ? Math.round(topPickW / (topPickW + topPickL) * 100) : 0;
+  const topPickRecord = (topPickW + topPickL) > 0 ? `<div style="margin-top:4px;font-size:11px;color:#8b949e">Top Pick Record: <span style="color:${topPickPct >= 50 ? '#3fb950' : '#f85149'};font-weight:600">${topPickW}W-${topPickL}L (${topPickPct}%)</span></div>` : '';
+  document.getElementById('statTopPickSub').innerHTML = topPick ? `${topPick.count} picks · <span class="badge ${topPick.league.toLowerCase()}">${topPick.league}</span> ${topPick.game}${topPickRecord}` : '';
 
   // Weekly Win Rate (current week, Mon-Sun, 4+ consensus, 1 per unique pick)
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
