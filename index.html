@@ -16318,7 +16318,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 12, 2026 at 9:13 AM EST"
+    "lastUpdated": "Apr 12, 2026 at 9:17 AM EST"
   }
 };
 
@@ -16456,7 +16456,22 @@ function render() {
   const tally = buildTally(results);
   const topPick = tally[0];
   document.getElementById('statTopPick').textContent = topPick ? topPick.pick : '--';
-  document.getElementById('statTopPickSub').innerHTML = topPick ? `${topPick.count} picks - <span class="badge ${topPick.league.toLowerCase()}">${topPick.league}</span> ${topPick.game}` : '';
+
+  // Compute historical record of all prior "most popular pick" outcomes
+  let topPickW = 0, topPickL = 0;
+  Object.keys(db.outcomes).sort().forEach(oDate => {
+    const dayRes = (db.days[oDate]?.results || []).filter(r => pickDateMatchesScrapeDate(r.date, oDate));
+    const dayTally = buildTally(dayRes).filter(t => t.count >= 4);
+    if (dayTally.length === 0) return;
+    const dayTop = dayTally[0];
+    const oc = Array.isArray(db.outcomes[oDate]) ? db.outcomes[oDate] : [];
+    const matched = oc.find(o => o.pick === dayTop.pick && o.game === dayTop.game) ||
+      oc.find(o => o.pick === dayTop.pick && o.game && dayTop.game && (o.game.toLowerCase().includes(dayTop.game.toLowerCase().split(' vs ')[0]) || dayTop.game.toLowerCase().includes(o.game.toLowerCase().split(' vs ')[0])));
+    if (matched?.outcome === 'WIN') topPickW++;
+    else if (matched?.outcome === 'LOSS') topPickL++;
+  });
+  const topPickRecord = (topPickW + topPickL) > 0 ? ` · Top picks: ${topPickW}W-${topPickL}L` : '';
+  document.getElementById('statTopPickSub').innerHTML = topPick ? `${topPick.count} picks - <span class="badge ${topPick.league.toLowerCase()}">${topPick.league}</span> ${topPick.game}${topPickRecord}` : '';
 
   // Weekly Win Rate (current week, Mon-Sun, 4+ consensus, 1 per unique pick)
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
