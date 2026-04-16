@@ -23916,7 +23916,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 16, 2026 at 11:04 AM EST"
+    "lastUpdated": "Apr 16, 2026 at 11:07 AM EST"
   }
 };
 
@@ -24384,7 +24384,8 @@ function renderOutcomeHistory() {
   const dates = Object.keys(db.outcomes).sort().reverse();
   if (dates.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
-  tbody.innerHTML = dates.map(date => {
+  const PAGE_SIZE = 7;
+  const rows = dates.map((date, i) => {
     const oc = db.outcomes[date];
     const arr = Array.isArray(oc) ? oc : Object.values(oc);
 
@@ -24409,14 +24410,43 @@ function renderOutcomeHistory() {
     const tallyTop = tally4[0];
     let topPickCell = '--';
     if (tallyTop) {
-      // Find outcome for this tally top pick
       const topOutcome = enriched.find(o => o.pick === tallyTop.pick && o.game === tallyTop.game) ||
         enriched.find(o => o.pick === tallyTop.pick && o.game && tallyTop.game && (o.game.toLowerCase().includes(tallyTop.game.toLowerCase().split(' vs ')[0]) || tallyTop.game.toLowerCase().includes(o.game.toLowerCase().split(' vs ')[0])));
       const badge = topOutcome ? ` <span class="badge ${topOutcome.outcome === 'WIN' ? 'win' : 'loss'}">${topOutcome.outcome}</span>` : '';
       topPickCell = `<span class="badge ${tallyTop.league.toLowerCase()}" style="font-size:10px;margin-right:3px">${tallyTop.league}</span>${tallyTop.pick} (${tallyTop.count}x)${badge}`;
     }
-    return `<tr><td>${formatDate(date)}</td><td>${enriched.length}</td><td style="color:#3fb950">${wins}</td><td style="color:#f85149">${losses}</td><td>${wr}</td><td>${topPickCell}</td></tr>`;
-  }).join('');
+    const hidden = i >= PAGE_SIZE ? ' style="display:none"' : '';
+    return `<tr class="outcome-row"${hidden}><td>${formatDate(date)}</td><td>${enriched.length}</td><td style="color:#3fb950">${wins}</td><td style="color:#f85149">${losses}</td><td>${wr}</td><td>${topPickCell}</td></tr>`;
+  });
+  tbody.innerHTML = rows.join('');
+
+  // Add show more button if needed
+  const existingBtn = document.getElementById('outcomeShowMore');
+  if (existingBtn) existingBtn.remove();
+  if (dates.length > PAGE_SIZE) {
+    const btn = document.createElement('div');
+    btn.id = 'outcomeShowMore';
+    btn.style.cssText = 'text-align:center;margin-top:8px';
+    btn.innerHTML = `<button onclick="showMoreOutcomes()" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:12px" id="outcomeShowMoreBtn">Show more (${dates.length - PAGE_SIZE} remaining) ▼</button>`;
+    tbody.parentElement.parentElement.appendChild(btn);
+  }
+}
+
+let outcomeVisibleCount = 7;
+function showMoreOutcomes() {
+  const PAGE_SIZE = 7;
+  const rows = document.querySelectorAll('.outcome-row');
+  outcomeVisibleCount += PAGE_SIZE;
+  rows.forEach((row, i) => {
+    if (i < outcomeVisibleCount) row.style.display = '';
+  });
+  const remaining = rows.length - outcomeVisibleCount;
+  const btn = document.getElementById('outcomeShowMoreBtn');
+  if (remaining <= 0) {
+    document.getElementById('outcomeShowMore').remove();
+  } else {
+    btn.innerHTML = `Show more (${remaining} remaining) ▼`;
+  }
 }
 
 function renderPickCountStats() {
