@@ -23916,7 +23916,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 16, 2026 at 11:07 AM EST"
+    "lastUpdated": "Apr 16, 2026 at 11:11 AM EST"
   }
 };
 
@@ -24436,16 +24436,27 @@ let outcomeVisibleCount = 7;
 function showMoreOutcomes() {
   const PAGE_SIZE = 7;
   const rows = document.querySelectorAll('.outcome-row');
-  outcomeVisibleCount += PAGE_SIZE;
-  rows.forEach((row, i) => {
-    if (i < outcomeVisibleCount) row.style.display = '';
-  });
-  const remaining = rows.length - outcomeVisibleCount;
-  const btn = document.getElementById('outcomeShowMoreBtn');
-  if (remaining <= 0) {
-    document.getElementById('outcomeShowMore').remove();
+  if (outcomeVisibleCount >= rows.length) {
+    // Collapse back to 7
+    outcomeVisibleCount = PAGE_SIZE;
+    rows.forEach((row, i) => {
+      row.style.display = i < PAGE_SIZE ? '' : 'none';
+    });
+    const btn = document.getElementById('outcomeShowMoreBtn');
+    btn.innerHTML = `Show more (${rows.length - PAGE_SIZE} remaining) ▼`;
   } else {
-    btn.innerHTML = `Show more (${remaining} remaining) ▼`;
+    // Expand next batch
+    outcomeVisibleCount += PAGE_SIZE;
+    rows.forEach((row, i) => {
+      if (i < outcomeVisibleCount) row.style.display = '';
+    });
+    const remaining = rows.length - outcomeVisibleCount;
+    const btn = document.getElementById('outcomeShowMoreBtn');
+    if (remaining <= 0) {
+      btn.innerHTML = 'Show less ▲';
+    } else {
+      btn.innerHTML = `Show more (${remaining} remaining) ▼`;
+    }
   }
 }
 
