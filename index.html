@@ -166,7 +166,7 @@ tr:hover td { background: #1c2128; }
 <div class="container">
   <!-- Summary Stats -->
   <div class="stats-row" id="statsRow">
-    <div class="stat-card"><div class="label">📊 Total Pending Picks</div><div class="value blue" id="statTotal">--</div><div class="sub" id="statScope">Top 200</div></div>
+    <div class="stat-card"><div class="label">📊 Total Pending Picks</div><div class="value blue" id="statTotal">--</div><div class="sub" id="statScope">Top 150</div></div>
     <div class="stat-card"><div class="label">🎯 Most Popular Pick</div><div class="value" id="statTopPick">--</div><div class="sub" id="statTopPickSub"></div></div>
     <div class="stat-card"><div class="label">🔥 Highest Streak Pending</div><div class="value green" id="statTopStreak">--</div><div class="sub" id="statTopStreakSub"></div></div>
     <div class="stat-card"><div class="label">📅 Weekly Win Rate</div><div class="value" id="statWeeklyWin">--</div><div class="sub" id="statWeeklyWinSub">this week</div></div>
@@ -1208,7 +1208,7 @@ const SEED_DATA = {
         }
       ],
       "count": 87,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-03": {
       "results": [
@@ -1774,7 +1774,7 @@ const SEED_DATA = {
         }
       ],
       "count": 56,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-04": {
       "results": [
@@ -3870,7 +3870,7 @@ const SEED_DATA = {
         }
       ],
       "count": 209,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-05": {
       "results": [
@@ -5856,7 +5856,7 @@ const SEED_DATA = {
         }
       ],
       "count": 198,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-06": {
       "results": [
@@ -7772,7 +7772,7 @@ const SEED_DATA = {
         }
       ],
       "count": 191,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-07": {
       "results": [
@@ -8948,7 +8948,7 @@ const SEED_DATA = {
         }
       ],
       "count": 117,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-08": {
       "results": [
@@ -10194,7 +10194,7 @@ const SEED_DATA = {
         }
       ],
       "count": 124,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-09": {
       "results": [
@@ -11290,7 +11290,7 @@ const SEED_DATA = {
         }
       ],
       "count": 109,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-10": {
       "results": [
@@ -12476,7 +12476,7 @@ const SEED_DATA = {
         }
       ],
       "count": 118,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-11": {
       "results": [
@@ -13962,7 +13962,7 @@ const SEED_DATA = {
         }
       ],
       "count": 148,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-12": {
       "results": [
@@ -16708,7 +16708,7 @@ const SEED_DATA = {
         }
       ],
       "count": 274,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-13": {
       "results": [
@@ -18454,7 +18454,7 @@ const SEED_DATA = {
         }
       ],
       "count": 174,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-14": {
       "results": [
@@ -20170,7 +20170,7 @@ const SEED_DATA = {
         }
       ],
       "count": 171,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-15": {
       "results": [
@@ -22096,7 +22096,7 @@ const SEED_DATA = {
         }
       ],
       "count": 192,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-16": {
       "results": [
@@ -23822,7 +23822,7 @@ const SEED_DATA = {
         }
       ],
       "count": 172,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-17": {
       "results": [
@@ -25828,7 +25828,7 @@ const SEED_DATA = {
         }
       ],
       "count": 200,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-18": {
       "results": [
@@ -28354,7 +28354,7 @@ const SEED_DATA = {
         }
       ],
       "count": 252,
-      "totalRows": 200
+      "totalRows": 150
     },
     "2026-04-19": {
       "results": [
@@ -31671,7 +31671,7 @@ const SEED_DATA = {
         "pick": "AZ -126",
         "league": "MLB",
         "game": "Toronto vs Arizona",
-        "outcome": "WIN",
+        "outcome": "PUSH",
         "score": "2-6",
         "pickCount": 14
       },
@@ -31718,7 +31718,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 19, 2026 at 3:50 PM EST"
+    "lastUpdated": "Apr 19, 2026 at 4:06 PM EST"
   }
 };
 
@@ -31798,7 +31798,7 @@ function getRangeResults() {
   Object.entries(db.days).forEach(([date, day]) => {
     if (date >= dateRangeFrom && date <= dateRangeTo) {
       (day.results || []).forEach(r => merged.push(r));
-      totalRows = Math.max(totalRows, day.totalRows || 200);
+      totalRows = Math.max(totalRows, day.totalRows || 150);
     }
   });
   return { results: merged, totalRows };
