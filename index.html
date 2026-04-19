@@ -23902,7 +23902,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 19, 2026 at 4:10 PM EST"
+    "lastUpdated": "Apr 19, 2026 at 4:13 PM EST"
   }
 };
 
@@ -24364,35 +24364,38 @@ function renderRecurringTable() {
   }).join('');
 }
 
+function getEnrichedOutcomes(date) {
+  const oc = db.outcomes[date];
+  const arr = Array.isArray(oc) ? oc : Object.values(oc);
+  const dayResults = (db.days[date]?.results || []).filter(r => pickDateMatchesScrapeDate(r.date, date));
+  const dayTally = buildTally(dayResults);
+  const tally4 = dayTally.filter(t => t.count >= 4);
+  const enriched = arr.map(o => {
+    const tallyMatch = tally4.find(t => t.pick === o.pick && t.game === o.game) ||
+      tally4.find(t => t.pick === o.pick && t.game && o.game && (t.game.toLowerCase().includes(o.game.toLowerCase().split(' vs ')[0]) || o.game.toLowerCase().includes(t.game.toLowerCase().split(' vs ')[0])));
+    return { ...o, pickCount: tallyMatch ? tallyMatch.count : (o.pickCount || 0) };
+  }).filter(o => o.pickCount >= 4);
+  return { enriched, tally4 };
+}
+
 function renderOutcomeHistory() {
   const tbody = document.getElementById('outcomeBody');
   const empty = document.getElementById('emptyOutcomes');
   const dates = Object.keys(db.outcomes).sort().reverse();
   if (dates.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
-  const PAGE_SIZE = 7;
-  const rows = dates.map((date, i) => {
-    const oc = db.outcomes[date];
-    const arr = Array.isArray(oc) ? oc : Object.values(oc);
 
-    // Rebuild tally from the day's results using the same logic as pick distribution
-    const dayResults = (db.days[date]?.results || []).filter(r => pickDateMatchesScrapeDate(r.date, date));
-    const dayTally = buildTally(dayResults);
-    const tally4 = dayTally.filter(t => t.count >= 4);
+  const RECENT = 7;
+  const recentDates = dates.slice(0, RECENT);
+  const olderDates = dates.slice(RECENT);
 
-    // Match outcomes to tally entries (by pick+game) and enrich with pickCount
-    const enriched = arr.map(o => {
-      const tallyMatch = tally4.find(t => t.pick === o.pick && t.game === o.game) ||
-        tally4.find(t => t.pick === o.pick && t.game && o.game && (t.game.toLowerCase().includes(o.game.toLowerCase().split(' vs ')[0]) || o.game.toLowerCase().includes(t.game.toLowerCase().split(' vs ')[0])));
-      return { ...o, pickCount: tallyMatch ? tallyMatch.count : (o.pickCount || 0) };
-    }).filter(o => o.pickCount >= 4);
-
+  // Build recent individual rows
+  const recentRows = recentDates.map(date => {
+    const { enriched, tally4 } = getEnrichedOutcomes(date);
     const wins = enriched.filter(o => o.outcome === 'WIN').length;
     const losses = enriched.filter(o => o.outcome === 'LOSS').length;
     const total = wins + losses;
     const wr = total > 0 ? `${Math.round(wins/total*100)}%` : 'N/A';
-
-    // Top pick = the same top pick from the tally (matches pick distribution and stat card)
     const tallyTop = tally4[0];
     let topPickCell = '--';
     if (tallyTop) {
@@ -24401,49 +24404,61 @@ function renderOutcomeHistory() {
       const badge = topOutcome ? ` <span class="badge ${topOutcome.outcome === 'WIN' ? 'win' : 'loss'}">${topOutcome.outcome}</span>` : '';
       topPickCell = `<span class="badge ${tallyTop.league.toLowerCase()}" style="font-size:10px;margin-right:3px">${tallyTop.league}</span>${tallyTop.pick} (${tallyTop.count}x)${badge}`;
     }
-    const hidden = i >= PAGE_SIZE ? ' style="display:none"' : '';
-    return `<tr class="outcome-row"${hidden}><td>${formatDate(date)}</td><td>${enriched.length}</td><td style="color:#3fb950">${wins}</td><td style="color:#f85149">${losses}</td><td>${wr}</td><td>${topPickCell}</td></tr>`;
+    return `<tr class="outcome-row"><td>${formatDate(date)}</td><td>${enriched.length}</td><td style="color:#3fb950">${wins}</td><td style="color:#f85149">${losses}</td><td>${wr}</td><td>${topPickCell}</td></tr>`;
   });
-  tbody.innerHTML = rows.join('');
 
-  // Add show more button if needed
+  // Build weekly bucket rows for older dates
+  const bucketRows = [];
+  for (let i = 0; i < olderDates.length; i += 7) {
+    const chunk = olderDates.slice(i, i + 7);
+    let bWins = 0, bLosses = 0, bPicks = 0, bestPick = null, bestCount = 0;
+    chunk.forEach(date => {
+      const { enriched, tally4 } = getEnrichedOutcomes(date);
+      bPicks += enriched.length;
+      bWins += enriched.filter(o => o.outcome === 'WIN').length;
+      bLosses += enriched.filter(o => o.outcome === 'LOSS').length;
+      const tallyTop = tally4[0];
+      if (tallyTop && tallyTop.count > bestCount) {
+        bestCount = tallyTop.count;
+        const topOutcome = enriched.find(o => o.pick === tallyTop.pick && o.game === tallyTop.game) ||
+          enriched.find(o => o.pick === tallyTop.pick && o.game && tallyTop.game && (o.game.toLowerCase().includes(tallyTop.game.toLowerCase().split(' vs ')[0]) || tallyTop.game.toLowerCase().includes(o.game.toLowerCase().split(' vs ')[0])));
+        bestPick = { ...tallyTop, outcome: topOutcome?.outcome || null };
+      }
+    });
+    const bTotal = bWins + bLosses;
+    const bWr = bTotal > 0 ? `${Math.round(bWins/bTotal*100)}%` : 'N/A';
+    const rangeLabel = `${formatDate(chunk[chunk.length - 1])} - ${formatDate(chunk[0])}`;
+    let topCell = '--';
+    if (bestPick) {
+      const badge = bestPick.outcome ? ` <span class="badge ${bestPick.outcome === 'WIN' ? 'win' : 'loss'}">${bestPick.outcome}</span>` : '';
+      topCell = `<span class="badge ${bestPick.league.toLowerCase()}" style="font-size:10px;margin-right:3px">${bestPick.league}</span>${bestPick.pick} (${bestCount}x)${badge}`;
+    }
+    bucketRows.push(`<tr class="outcome-row outcome-bucket" style="display:none;background:#161b22"><td style="font-weight:600">${rangeLabel}</td><td>${bPicks}</td><td style="color:#3fb950">${bWins}</td><td style="color:#f85149">${bLosses}</td><td>${bWr}</td><td>${topCell}</td></tr>`);
+  }
+
+  tbody.innerHTML = recentRows.join('') + bucketRows.join('');
+
+  // Add show more/less button if there are buckets
   const existingBtn = document.getElementById('outcomeShowMore');
   if (existingBtn) existingBtn.remove();
-  if (dates.length > PAGE_SIZE) {
+  if (bucketRows.length > 0) {
     const btn = document.createElement('div');
     btn.id = 'outcomeShowMore';
     btn.style.cssText = 'text-align:center;margin-top:8px';
-    btn.innerHTML = `<button onclick="showMoreOutcomes()" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:12px" id="outcomeShowMoreBtn">Show more (${dates.length - PAGE_SIZE} remaining) ▼</button>`;
+    btn.innerHTML = `<button onclick="toggleOutcomeBuckets()" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:12px" id="outcomeShowMoreBtn">Show previous weeks (${olderDates.length} days) ▼</button>`;
     tbody.parentElement.parentElement.appendChild(btn);
   }
 }
 
-let outcomeVisibleCount = 7;
-function showMoreOutcomes() {
-  const PAGE_SIZE = 7;
-  const rows = document.querySelectorAll('.outcome-row');
-  if (outcomeVisibleCount >= rows.length) {
-    // Collapse back to 7
-    outcomeVisibleCount = PAGE_SIZE;
-    rows.forEach((row, i) => {
-      row.style.display = i < PAGE_SIZE ? '' : 'none';
-    });
-    const btn = document.getElementById('outcomeShowMoreBtn');
-    btn.innerHTML = `Show more (${rows.length - PAGE_SIZE} remaining) ▼`;
-  } else {
-    // Expand next batch
-    outcomeVisibleCount += PAGE_SIZE;
-    rows.forEach((row, i) => {
-      if (i < outcomeVisibleCount) row.style.display = '';
-    });
-    const remaining = rows.length - outcomeVisibleCount;
-    const btn = document.getElementById('outcomeShowMoreBtn');
-    if (remaining <= 0) {
-      btn.innerHTML = 'Show less ▲';
-    } else {
-      btn.innerHTML = `Show more (${remaining} remaining) ▼`;
-    }
-  }
+let outcomeBucketsVisible = false;
+function toggleOutcomeBuckets() {
+  outcomeBucketsVisible = !outcomeBucketsVisible;
+  document.querySelectorAll('.outcome-bucket').forEach(row => {
+    row.style.display = outcomeBucketsVisible ? '' : 'none';
+  });
+  const btn = document.getElementById('outcomeShowMoreBtn');
+  const olderCount = document.querySelectorAll('.outcome-bucket').length;
+  btn.innerHTML = outcomeBucketsVisible ? 'Hide previous weeks ▲' : `Show previous weeks (${olderCount} week${olderCount > 1 ? 's' : ''}) ▼`;
 }
 
 function renderPickCountStats() {
