@@ -24070,7 +24070,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 19, 2026 at 4:20 PM EST"
+    "lastUpdated": "Apr 19, 2026 at 4:30 PM EST"
   }
 };
 
@@ -24296,6 +24296,7 @@ function normalizePick(pick) {
 function buildTally(results) {
   const t = {};
   results.forEach(r => {
+    if (!r.pick || r.pick === 'ERROR' || r.pick === 'NO_PENDING' || !r.league || !r.game) return;
     const norm = normalizePick(r.pick);
     const key = norm.key + '|||' + (r.game || '');
     if (!t[key]) {
@@ -24542,21 +24543,37 @@ function renderVolumeChart() {
 function renderRecurringTable() {
   const allPicks = {};
   Object.entries(db.days).forEach(([date, day]) => {
-    const dailyTally = {};
-    (day.results || []).forEach(r => { dailyTally[r.pick] = (dailyTally[r.pick] || 0) + 1; });
+    // Use normalizePick to aggregate similar picks, same as pick distribution
+    const dailyNorm = {};
     (day.results || []).forEach(r => {
-      if (dailyTally[r.pick] < 4) return;
-      if (!allPicks[r.pick]) allPicks[r.pick] = { count: 0, wins: 0, losses: 0, eventDate: r.date || '', league: r.league, game: r.game };
-      allPicks[r.pick].count++;
-      if (r.date) allPicks[r.pick].eventDate = r.date;
+      if (!r.pick || r.pick === 'ERROR' || r.pick === 'NO_PENDING' || !r.league || !r.game) return;
+      const norm = normalizePick(r.pick);
+      const key = norm.key + '|||' + (r.game || '');
+      dailyNorm[key] = (dailyNorm[key] || 0) + 1;
     });
+    (day.results || []).forEach(r => {
+      if (!r.pick || r.pick === 'ERROR' || r.pick === 'NO_PENDING' || !r.league || !r.game) return;
+      const norm = normalizePick(r.pick);
+      const key = norm.key + '|||' + (r.game || '');
+      if (dailyNorm[key] < 4) return;
+      const globalKey = norm.key + '|||' + (r.game || '');
+      if (!allPicks[globalKey]) allPicks[globalKey] = { pick: r.pick, count: 0, wins: 0, losses: 0, eventDate: r.date || '', league: r.league, game: r.game, variants: {} };
+      allPicks[globalKey].count++;
+      allPicks[globalKey].variants[r.pick] = (allPicks[globalKey].variants[r.pick] || 0) + 1;
+      if (r.date) allPicks[globalKey].eventDate = r.date;
+    });
+  });
+  // Set display pick to most common variant
+  Object.values(allPicks).forEach(entry => {
+    const sorted = Object.entries(entry.variants).sort((a, b) => b[1] - a[1]);
+    if (sorted.length > 0) entry.pick = sorted[0][0];
   });
   const sorted = Object.entries(allPicks).sort((a, b) => b[1].count - a[1].count).slice(0, 10);
   const tbody = document.getElementById('recurringBody');
-  tbody.innerHTML = sorted.map(([pick, data]) => {
+  tbody.innerHTML = sorted.map(([key, data]) => {
     const total = data.wins + data.losses;
     const wr = total > 0 ? `${Math.round(data.wins/total*100)}%` : 'N/A';
-    return `<tr><td><span class="badge ${data.league.toLowerCase()}" style="font-size:10px;margin-right:4px">${data.league}</span><strong>${pick}</strong> <span style="color:#8b949e;font-size:11px">(${data.game})</span></td><td>${data.count}</td><td>${wr}</td><td>${data.eventDate}</td></tr>`;
+    return `<tr><td><span class="badge ${data.league.toLowerCase()}" style="font-size:10px;margin-right:4px">${data.league}</span><strong>${data.pick}</strong> <span style="color:#8b949e;font-size:11px">(${data.game})</span></td><td>${data.count}</td><td>${wr}</td><td>${data.eventDate}</td></tr>`;
   }).join('');
 }
 
