@@ -24070,7 +24070,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 19, 2026 at 4:31 PM EST"
+    "lastUpdated": "Apr 19, 2026 at 5:28 PM EST"
   }
 };
 
@@ -24749,7 +24749,7 @@ const MAX_SCORES_VISIBLE = 4;
 
 function toggleScoresExpand() {
   scoresExpanded = !scoresExpanded;
-  const cards = document.querySelectorAll('#liveScores .score-card');
+  const cards = document.querySelectorAll('#liveScores > a');
   cards.forEach((card, i) => { card.style.display = (scoresExpanded || i < MAX_SCORES_VISIBLE) ? '' : 'none'; });
   document.getElementById('scoresExpandText').innerHTML = scoresExpanded ? 'Show less &#9650;' : 'Show all games &#9660;';
 }
@@ -24822,6 +24822,10 @@ async function fetchScores() {
   const statusOrder = { 'STATUS_IN_PROGRESS': 0, 'STATUS_HALFTIME': 0, 'STATUS_SCHEDULED': 1, 'STATUS_FINAL': 2, 'STATUS_POSTPONED': 3 };
   events.sort((a, b) => (statusOrder[a.status?.type?.name] ?? 1) - (statusOrder[b.status?.type?.name] ?? 1));
 
+  // ESPN game page URL paths by league
+  const espnGamePaths = { mlb: 'mlb', nba: 'nba', nhl: 'nhl', ncaab: 'mens-college-basketball' };
+  const gamePath = espnGamePaths[currentLeague] || currentLeague;
+
   container.innerHTML = events.map(ev => {
     const comp = ev.competitions?.[0] || {};
     const competitors = comp.competitors || [];
@@ -24839,8 +24843,11 @@ async function fetchScores() {
     const awayWin = status === 'STATUS_FINAL' && parseInt(awayScore) > parseInt(homeScore);
     const statusClass = status === 'STATUS_IN_PROGRESS' ? 'live' : status === 'STATUS_FINAL' ? 'final' : 'pre';
     const statusText = status === 'STATUS_IN_PROGRESS' ? detail : status === 'STATUS_FINAL' ? 'Final' : detail || 'Scheduled';
+    const gameId = ev.id || '';
+    const espnLink = gameId ? 'https://www.espn.com/' + gamePath + '/game/_/gameId/' + gameId : '';
 
-    return '<div class="score-card">' +
+    return '<a href="' + espnLink + '" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;display:block">' +
+      '<div class="score-card" style="cursor:pointer">' +
       '<div class="sc-header"><span class="badge ' + currentLeague + '">' + currentLeague.toUpperCase() + '</span>' +
       '<span class="sc-status ' + statusClass + '">' + statusText + '</span></div>' +
       '<div class="sc-team ' + (awayWin ? 'winner' : '') + '">' +
@@ -24849,7 +24856,7 @@ async function fetchScores() {
       '<div class="sc-team ' + (homeWin ? 'winner' : '') + '">' +
       (homeLogo ? '<img src="' + homeLogo + '" style="width:18px;height:18px;margin-right:6px;vertical-align:middle">' : '') +
       '<span class="name">' + homeName + '</span><span class="score">' + homeScore + '</span></div>' +
-      '</div>';
+      '</div></a>';
   }).join('');
 
   const liveCount = events.filter(e => e.status?.type?.name === 'STATUS_IN_PROGRESS').length;
@@ -24858,7 +24865,7 @@ async function fetchScores() {
   document.getElementById('liveTimer').textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }) + ' EST';
 
   // Show only first 4, hide the rest
-  const cards = document.querySelectorAll('#liveScores .score-card');
+  const cards = document.querySelectorAll('#liveScores > a');
   cards.forEach((card, i) => { card.style.display = (scoresExpanded || i < MAX_SCORES_VISIBLE) ? '' : 'none'; });
   document.getElementById('scoresExpandBtn').style.display = events.length > MAX_SCORES_VISIBLE ? 'block' : 'none';
   document.getElementById('scoresExpandText').innerHTML = scoresExpanded ? 'Show less &#9650;' : ('Show all ' + events.length + ' games &#9660;');
