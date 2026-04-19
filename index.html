@@ -286,7 +286,7 @@ tr:hover td { background: #1c2128; }
     <div class="panel">
       <h2>🔁 Top Recurring Picks (All Time)</h2>
       <table id="recurringTable">
-        <thead><tr><th>Pick</th><th>Times Chosen</th><th>Win Rate</th><th>Event Date</th></tr></thead>
+        <thead><tr><th>Pick</th><th>Times Chosen</th><th>Event Date</th></tr></thead>
         <tbody id="recurringBody"></tbody>
       </table>
     </div>
@@ -24070,7 +24070,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 19, 2026 at 4:30 PM EST"
+    "lastUpdated": "Apr 19, 2026 at 4:31 PM EST"
   }
 };
 
@@ -24571,9 +24571,7 @@ function renderRecurringTable() {
   const sorted = Object.entries(allPicks).sort((a, b) => b[1].count - a[1].count).slice(0, 10);
   const tbody = document.getElementById('recurringBody');
   tbody.innerHTML = sorted.map(([key, data]) => {
-    const total = data.wins + data.losses;
-    const wr = total > 0 ? `${Math.round(data.wins/total*100)}%` : 'N/A';
-    return `<tr><td><span class="badge ${data.league.toLowerCase()}" style="font-size:10px;margin-right:4px">${data.league}</span><strong>${data.pick}</strong> <span style="color:#8b949e;font-size:11px">(${data.game})</span></td><td>${data.count}</td><td>${wr}</td><td>${data.eventDate}</td></tr>`;
+    return `<tr><td><span class="badge ${data.league.toLowerCase()}" style="font-size:10px;margin-right:4px">${data.league}</span><strong>${data.pick}</strong> <span style="color:#8b949e;font-size:11px">(${data.game})</span></td><td>${data.count}</td><td>${data.eventDate}</td></tr>`;
   }).join('');
 }
 
