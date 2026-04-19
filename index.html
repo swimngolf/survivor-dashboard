@@ -24070,7 +24070,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 19, 2026 at 5:28 PM EST"
+    "lastUpdated": "Apr 19, 2026 at 5:29 PM EST"
   }
 };
 
@@ -24678,6 +24678,7 @@ function toggleOutcomeBuckets() {
 function renderPickCountStats() {
   const tbody = document.getElementById('pickCountBody');
   const empty = document.getElementById('emptyPickCount');
+  const VISIBLE = 5;
 
   const countBuckets = {};
 
@@ -24696,15 +24697,37 @@ function renderPickCountStats() {
   if (sorted.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; return; }
   empty.style.display = 'none';
 
-  // Add totals row
   let totalW = 0, totalL = 0;
   sorted.forEach(([, d]) => { totalW += d.wins; totalL += d.losses; });
 
-  tbody.innerHTML = sorted.map(([count, data]) => {
+  tbody.innerHTML = sorted.map(([count, data], i) => {
     const total = data.wins + data.losses;
     const wr = total > 0 ? Math.round(data.wins / total * 100) + '%' : 'N/A';
-    return `<tr><td>${count} people</td><td>${total}</td><td style="color:#3fb950">${data.wins}</td><td style="color:#f85149">${data.losses}</td><td>${wr}</td></tr>`;
+    const hidden = i >= VISIBLE ? ' class="pickcount-extra" style="display:none"' : '';
+    return `<tr${hidden}><td>${count} people</td><td>${total}</td><td style="color:#3fb950">${data.wins}</td><td style="color:#f85149">${data.losses}</td><td>${wr}</td></tr>`;
   }).join('') + `<tr style="border-top:2px solid #30363d;font-weight:600"><td>Total</td><td>${totalW+totalL}</td><td style="color:#3fb950">${totalW}</td><td style="color:#f85149">${totalL}</td><td>${totalW+totalL>0?Math.round(totalW/(totalW+totalL)*100)+'%':'N/A'}</td></tr>`;
+
+  // Add expand button if needed
+  const existingBtn = document.getElementById('pickCountShowMore');
+  if (existingBtn) existingBtn.remove();
+  if (sorted.length > VISIBLE) {
+    const btn = document.createElement('div');
+    btn.id = 'pickCountShowMore';
+    btn.style.cssText = 'text-align:center;margin-top:8px';
+    btn.innerHTML = `<button onclick="togglePickCountRows()" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:6px 16px;border-radius:6px;cursor:pointer;font-size:12px" id="pickCountToggleBtn">Show all (${sorted.length - VISIBLE} more) ▼</button>`;
+    tbody.parentElement.parentElement.appendChild(btn);
+  }
+}
+
+let pickCountExpanded = false;
+function togglePickCountRows() {
+  pickCountExpanded = !pickCountExpanded;
+  document.querySelectorAll('.pickcount-extra').forEach(row => {
+    row.style.display = pickCountExpanded ? '' : 'none';
+  });
+  const btn = document.getElementById('pickCountToggleBtn');
+  const count = document.querySelectorAll('.pickcount-extra').length;
+  btn.innerHTML = pickCountExpanded ? 'Show less ▲' : `Show all (${count} more) ▼`;
 }
 
 function renderWinRateChart() {
