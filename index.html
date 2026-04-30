@@ -39137,7 +39137,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 30, 2026 at 9:07 AM EST"
+    "lastUpdated": "Apr 30, 2026 at 9:10 AM EST"
   }
 };
 
@@ -39456,9 +39456,10 @@ function renderPickBars(tally) {
     const timeStr = t.time ? ' · ' + t.time : '';
     const hidden = i >= MAX_VISIBLE ? ' style="display:none"' : '';
     const oppositeTag = t.hasOpposition && t.oppositeCount > 0 ? ` <span style="color:#f85149;font-size:10px;font-weight:600">(${t.oppositeCount} opposite)</span>` : '';
+    const moneyBag = (!t.hasOpposition && t.count >= 4) ? ' 💰' : '';
     return `<div class="pick-bar pick-bar-item"${hidden}>
       <div>
-        <div class="name"><span class="badge ${t.league.toLowerCase()}" style="font-size:10px;vertical-align:middle;margin-right:4px">${t.league}</span>${t.pick}${oppositeTag}</div>
+        <div class="name"><span class="badge ${t.league.toLowerCase()}" style="font-size:10px;vertical-align:middle;margin-right:4px">${t.league}</span>${t.pick}${moneyBag}${oppositeTag}</div>
         <div class="detail">${t.game}${timeStr}</div>
       </div>
       <div class="bar" style="width:${Math.max(t.count/maxCount*120, 8)}px;background:${LEAGUE_COLORS[t.league]||'#58a6ff'}"></div>
