@@ -39137,7 +39137,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 30, 2026 at 9:10 AM EST"
+    "lastUpdated": "Apr 30, 2026 at 9:12 AM EST"
   }
 };
 
@@ -39368,11 +39368,14 @@ function buildTally(results) {
     const norm = normalizePick(r.pick);
     const key = norm.key + '|||' + (r.game || '');
     if (!t[key]) {
-      t[key] = { pick: r.pick, count: 0, league: r.league, game: r.game, date: r.date, time: r.time || '', pickVariants: {}, norm: norm };
+      t[key] = { pick: r.pick, count: 0, league: r.league, game: r.game, date: r.date, time: r.time || '', pickVariants: {}, norm: norm, bestRank: 999 };
     }
     t[key].count++;
     t[key].pickVariants[r.pick] = (t[key].pickVariants[r.pick] || 0) + 1;
     if (!t[key].time && r.time) t[key].time = r.time;
+    // Track the best (lowest) rank among pickers
+    const rank = parseInt(r.rank) || 999;
+    if (rank < t[key].bestRank) t[key].bestRank = rank;
   });
   // Set display pick to the most common variant
   Object.values(t).forEach(entry => {
@@ -39389,21 +39392,17 @@ function buildTally(results) {
     const norm = entry.norm;
     if (!game) return;
 
-    // Find opposing entries for the same game
     entries.forEach(other => {
       if (other === entry || other.game !== game) return;
       const oNorm = other.norm;
-      // Over vs Under
       if (norm.type === 'ou' && oNorm.type === 'ou' && norm.side !== oNorm.side) {
         entry.oppositeCount += other.count;
         entry.hasOpposition = true;
       }
-      // Team A ML vs Team B ML (different teams, same game)
       if (norm.type === 'ml' && oNorm.type === 'ml' && norm.team !== oNorm.team) {
         entry.oppositeCount += other.count;
         entry.hasOpposition = true;
       }
-      // Team A spread vs Team B spread (different teams, same game)
       if (norm.type === 'spread' && oNorm.type === 'spread' && norm.team !== oNorm.team) {
         entry.oppositeCount += other.count;
         entry.hasOpposition = true;
@@ -39411,7 +39410,8 @@ function buildTally(results) {
     });
   });
 
-  return entries.sort((a, b) => b.count - a.count);
+  // Sort by count descending, then by best rank ascending (lower rank = higher priority) as tiebreaker
+  return entries.sort((a, b) => b.count - a.count || a.bestRank - b.bestRank);
 }
 
 function formatDate(d) {
