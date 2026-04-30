@@ -118,7 +118,8 @@ tr:hover td { background: #1c2128; }
   .header .meta span { font-size: 15px !important; }
   .date-nav { flex-wrap: wrap; justify-content: center; gap: 6px; width: 100%; }
   .date-nav button, .date-nav select, .date-nav input { font-size: 11px; padding: 5px 8px; }
-  .date-nav .current-date { font-size: 13px; width: 100%; text-align: center; }
+  .date-nav .current-date { font-size: 13px; }
+  .date-nav select { width: 100%; max-width: 200px; }
   #customRangeWrap { width: 100%; justify-content: center; }
   .container { padding: 8px; width: 100%; }
   .stats-row { grid-template-columns: 1fr; gap: 8px; }
@@ -163,24 +164,28 @@ tr:hover td { background: #1c2128; }
   <h1 style="margin:0 0 4px 0">Snyder's <span>Streak Survivor</span> Dashboard</h1>
   <div class="meta"><span style="font-size:12px;font-style:italic;color:#f85149">*Not Financial Advice*</span><br><span style="font-size:22px;font-weight:700;background:linear-gradient(90deg,#58a6ff,#bc8cff,#d29922,#3fb950,#58a6ff);background-size:200% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:0.5px;display:inline-block;margin:8px 0;animation:fadeInUp 1s ease-out,shimmer 3s linear infinite">"The trend is your friend... Until it ends"</span><br><span id="lastRefreshed" style="font-size:11px;color:#6e7681"></span></div>
   <div class="date-nav" style="margin-top:16px">
-    <button onclick="prevDay()">&larr;</button>
-    <span class="current-date" id="currentDate">Loading...</span>
-    <button onclick="nextDay()">&rarr;</button>
-    <button onclick="loadToday()" style="margin-left:4px">Today</button>
-    <select id="dateRangeSelect" onchange="handleRangeSelect(this.value)" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;margin-left:8px">
-      <option value="">Date Range</option>
-      <option value="3">Last 3 Days</option>
-      <option value="7">Last 7 Days</option>
-      <option value="14">Last 14 Days</option>
-      <option value="30">Last 30 Days</option>
-      <option value="all">All Time</option>
-      <option value="custom">Custom Range...</option>
-    </select>
-    <div id="customRangeWrap" style="display:none;margin-left:6px;align-items:center;gap:4px">
-      <input type="date" id="dateFrom" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:4px 6px;border-radius:6px;font-size:11px">
-      <span style="font-size:11px;color:#8b949e">to</span>
-      <input type="date" id="dateTo" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:4px 6px;border-radius:6px;font-size:11px">
-      <button onclick="applyCustomRange()" style="background:#58a6ff;border:none;color:#0f1117;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600">Go</button>
+    <div style="display:flex;align-items:center;gap:8px;justify-content:center">
+      <button onclick="prevDay()">&larr;</button>
+      <span class="current-date" id="currentDate">Loading...</span>
+      <button onclick="nextDay()">&rarr;</button>
+      <button onclick="loadToday()">Today</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;justify-content:center;margin-top:8px">
+      <select id="dateRangeSelect" onchange="handleRangeSelect(this.value)" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer">
+        <option value="">Date Range</option>
+        <option value="3">Last 3 Days</option>
+        <option value="7">Last 7 Days</option>
+        <option value="14">Last 14 Days</option>
+        <option value="30">Last 30 Days</option>
+        <option value="all">All Time</option>
+        <option value="custom">Custom Range...</option>
+      </select>
+      <div id="customRangeWrap" style="display:none;align-items:center;gap:4px">
+        <input type="date" id="dateFrom" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:4px 6px;border-radius:6px;font-size:11px">
+        <span style="font-size:11px;color:#8b949e">to</span>
+        <input type="date" id="dateTo" style="background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:4px 6px;border-radius:6px;font-size:11px">
+        <button onclick="applyCustomRange()" style="background:#58a6ff;border:none;color:#0f1117;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600">Go</button>
+      </div>
     </div>
   </div>
 </div>
@@ -39160,7 +39165,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 30, 2026 at 9:51 AM EST"
+    "lastUpdated": "Apr 30, 2026 at 9:56 AM EST"
   }
 };
 
