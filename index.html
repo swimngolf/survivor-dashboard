@@ -39138,7 +39138,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 30, 2026 at 9:35 AM EST"
+    "lastUpdated": "Apr 30, 2026 at 9:37 AM EST"
   }
 };
 
@@ -39330,7 +39330,7 @@ function render() {
   const totalGraded = totalW + totalL;
   document.getElementById('statWinRate').textContent = totalGraded > 0 ? `${Math.round(totalW / totalGraded * 100)}%` : 'N/A';
   document.getElementById('statWinRate').className = 'value ' + (totalGraded > 0 && totalW/totalGraded >= 0.5 ? 'green' : totalGraded > 0 ? 'red' : '');
-  document.getElementById('statWinRateSub').textContent = totalGraded > 0 ? `${totalW}W - ${totalL}L (picks with 4+ consensus)` : 'Tracks picks with 4+ consensus only';
+  document.getElementById('statWinRateSub').textContent = totalGraded > 0 ? `${totalW}W - ${totalL}L (💰 picks only)` : 'Tracks 💰 picks only';
 
   renderPickBars(tally);
   renderLeagueChart(results);
