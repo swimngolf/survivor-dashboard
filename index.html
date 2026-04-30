@@ -39138,7 +39138,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "Apr 30, 2026 at 9:29 AM EST"
+    "lastUpdated": "Apr 30, 2026 at 9:31 AM EST"
   }
 };
 
@@ -39844,11 +39844,18 @@ function renderWinRateChart() {
     if (o.outcome === 'WIN') wins[idx]++;
     else if (o.outcome === 'LOSS') losses[idx]++;
   });
+  // Compute win rate percentages for labels
+  const pcts = leagues.map((_, i) => {
+    const total = wins[i] + losses[i];
+    return total > 0 ? Math.round(wins[i] / total * 100) + '%' : 'N/A';
+  });
+  const barLabels = leagues.map((lg, i) => `${lg} (${pcts[i]})`);
+
   if (charts.winRate) charts.winRate.destroy();
   charts.winRate = new Chart(document.getElementById('winRateChart'), {
     type: 'bar',
     data: {
-      labels: leagues,
+      labels: barLabels,
       datasets: [
         { label: 'Wins', data: wins, backgroundColor: '#3fb950', borderRadius: 4 },
         { label: 'Losses', data: losses, backgroundColor: '#f85149', borderRadius: 4 }
