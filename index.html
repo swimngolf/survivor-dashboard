@@ -44844,7 +44844,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "May 4, 2026 at 1:05 PM EST"
+    "lastUpdated": "May 4, 2026 at 1:10 PM EST"
   }
 };
 
@@ -44922,13 +44922,31 @@ function getRangeResults() {
   if (!dateRangeMode) return null;
   const merged = [];
   let totalRows = 0;
+  const months = { Jan:'01', Feb:'02', Mar:'03', Apr:'04', May:'05', Jun:'06', Jul:'07', Aug:'08', Sep:'09', Oct:'10', Nov:'11', Dec:'12' };
   Object.entries(db.days).forEach(([date, day]) => {
     if (date >= dateRangeFrom && date <= dateRangeTo) {
-      (day.results || []).forEach(r => merged.push(r));
+      // Only include picks whose actual pick date falls within the range
+      (day.results || []).forEach(r => {
+        if (!r.date) return;
+        const m = r.date.match(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d+),\s+(\d+)/);
+        if (!m) return;
+        const pickDate = `${m[3]}-${months[m[1]]}-${m[2].padStart(2, '0')}`;
+        if (pickDate >= dateRangeFrom && pickDate <= dateRangeTo) {
+          merged.push(r);
+        }
+      });
       totalRows = Math.max(totalRows, day.totalRows || 150);
     }
   });
-  return { results: merged, totalRows };
+  // Deduplicate by member+pick (same pick can appear in multiple days' data)
+  const seen = new Set();
+  const deduped = merged.filter(r => {
+    const key = r.member + '|' + r.pick + '|' + r.date;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  return { results: deduped, totalRows };
 }
 
 // ============================================================
