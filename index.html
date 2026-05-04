@@ -44844,7 +44844,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "May 4, 2026 at 1:02 PM EST"
+    "lastUpdated": "May 4, 2026 at 1:04 PM EST"
   }
 };
 
@@ -44986,8 +44986,12 @@ function render() {
   document.getElementById('statTopPick').textContent = topPick ? topPick.pick : '--';
 
   // Determine active date scope for stats
+  // When viewing today (default), show all-time stats. When navigating to a past date or using date range, scope to that.
+  const isToday = !dateRangeMode && currentDateIdx === 0;
   const activeDates = [];
-  if (dateRangeMode && dateRangeFrom && dateRangeTo) {
+  if (isToday) {
+    Object.keys(db.outcomes).forEach(d => activeDates.push(d));
+  } else if (dateRangeMode && dateRangeFrom && dateRangeTo) {
     Object.keys(db.outcomes).forEach(d => { if (d >= dateRangeFrom && d <= dateRangeTo) activeDates.push(d); });
   } else {
     activeDates.push(date);
