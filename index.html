@@ -44844,7 +44844,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "May 4, 2026 at 12:11 PM EST"
+    "lastUpdated": "May 4, 2026 at 12:20 PM EST"
   }
 };
 
@@ -45724,6 +45724,47 @@ render();
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
+</script>
+
+<!-- Premium Coming Soon -->
+<div style="max-width:600px;margin:32px auto 0;padding:28px 24px;background:linear-gradient(135deg,#1a1f2e,#0d1117);border:1px solid #30363d;border-radius:12px;text-align:center">
+  <div style="font-size:36px;margin-bottom:8px">⭐</div>
+  <h2 style="font-size:22px;color:#f0f6fc;margin:0 0 8px 0">Premium Coming Soon</h2>
+  <p style="font-size:13px;color:#8b949e;margin:0 0 16px 0;line-height:1.5">Get an edge before everyone else. Join the waitlist for early access.</p>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-bottom:20px">
+    <div style="background:#21262d;border:1px solid #30363d;border-radius:8px;padding:10px 14px;font-size:12px;color:#c9d1d9">🔔 Real-time 💰 pick alerts</div>
+    <div style="background:#21262d;border:1px solid #30363d;border-radius:8px;padding:10px 14px;font-size:12px;color:#c9d1d9">⏰ Early access to picks</div>
+    <div style="background:#21262d;border:1px solid #30363d;border-radius:8px;padding:10px 14px;font-size:12px;color:#c9d1d9">📊 Data exports</div>
+    <div style="background:#21262d;border:1px solid #30363d;border-radius:8px;padding:10px 14px;font-size:12px;color:#c9d1d9">🎯 Custom team alerts</div>
+  </div>
+  <form action="https://formspree.io/f/YOUR_FORM_ID" method="POST" id="waitlistForm" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+    <input type="email" name="email" required placeholder="Enter your email" style="background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:10px 16px;border-radius:8px;font-size:14px;width:260px;outline:none" onfocus="this.style.borderColor='#58a6ff'" onblur="this.style.borderColor='#30363d'">
+    <input type="hidden" name="_subject" value="New Streak Survivor Premium Waitlist Signup">
+    <button type="submit" style="background:#58a6ff;border:none;color:#0f1117;padding:10px 20px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">Join Waitlist</button>
+  </form>
+  <p id="waitlistMsg" style="font-size:12px;color:#3fb950;margin:10px 0 0 0;display:none">You're on the list! We'll notify you when Premium launches.</p>
+  <p style="font-size:11px;color:#484f58;margin:12px 0 0 0">Free forever for the core dashboard. Premium adds the extras.</p>
+</div>
+<script>
+document.getElementById('waitlistForm').addEventListener('submit', function(e) {
+  const btn = this.querySelector('button[type="submit"]');
+  btn.textContent = 'Joining...';
+  btn.disabled = true;
+  fetch(this.action, { method: 'POST', body: new FormData(this), headers: { 'Accept': 'application/json' } })
+    .then(r => {
+      if (r.ok) {
+        document.getElementById('waitlistMsg').style.display = 'block';
+        this.querySelector('input[type="email"]').value = '';
+        btn.textContent = 'Joined ✓';
+        btn.style.background = '#3fb950';
+      } else {
+        btn.textContent = 'Join Waitlist';
+        btn.disabled = false;
+      }
+    })
+    .catch(() => { btn.textContent = 'Join Waitlist'; btn.disabled = false; });
+  e.preventDefault();
+});
 </script>
 
 <!-- Footer -->
