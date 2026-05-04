@@ -45122,7 +45122,17 @@ function render() {
   // Split into same-day picks vs future picks
   const scrapeDate = dateRangeMode ? null : date;
   const results = dateRangeMode ? allResults : allResults.filter(r => pickDateMatchesScrapeDate(r.date, scrapeDate));
-  const futurePicks = dateRangeMode ? [] : allResults.filter(r => !pickDateMatchesScrapeDate(r.date, scrapeDate));
+  // Future picks: only picks with dates strictly after the scrape date, excluding errors/blanks
+  const futurePicks = dateRangeMode ? [] : allResults.filter(r => {
+    if (!r.date || !r.pick || r.pick === 'ERROR' || r.pick === 'NO_PENDING' || !r.game || !r.league) return false;
+    if (pickDateMatchesScrapeDate(r.date, scrapeDate)) return false;
+    // Convert pick date to YYYY-MM-DD and check if it's after scrape date
+    const months = { Jan:'01', Feb:'02', Mar:'03', Apr:'04', May:'05', Jun:'06', Jul:'07', Aug:'08', Sep:'09', Oct:'10', Nov:'11', Dec:'12' };
+    const m = r.date.match(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d+),\s+(\d+)/);
+    if (!m) return false;
+    const pickDate = `${m[3]}-${months[m[1]]}-${m[2].padStart(2, '0')}`;
+    return pickDate > scrapeDate;
+  });
 
   document.getElementById('currentDate').textContent = displayDate;
 
