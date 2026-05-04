@@ -44844,7 +44844,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "May 4, 2026 at 12:27 PM EST"
+    "lastUpdated": "May 4, 2026 at 1:02 PM EST"
   }
 };
 
@@ -44854,6 +44854,7 @@ const SEED_DATA = {
 let db = seedData();
 let currentDateIdx = 0;
 let sortedDates = Object.keys(db.days).sort().reverse();
+let currentActiveDates = [];
 let charts = {};
 
 function getCurrentDate() {
@@ -44984,9 +44985,20 @@ function render() {
   const topPick = tally.find(t => !t.hasOpposition) || null;
   document.getElementById('statTopPick').textContent = topPick ? topPick.pick : '--';
 
+  // Determine active date scope for stats
+  const activeDates = [];
+  if (dateRangeMode && dateRangeFrom && dateRangeTo) {
+    Object.keys(db.outcomes).forEach(d => { if (d >= dateRangeFrom && d <= dateRangeTo) activeDates.push(d); });
+  } else {
+    activeDates.push(date);
+  }
+  currentActiveDates = activeDates;
+
   // Compute historical record of all prior "most popular pick" outcomes (excluding conflicting picks)
+  // Scoped to active dates
   let topPickW = 0, topPickL = 0;
-  Object.keys(db.outcomes).sort().forEach(oDate => {
+  activeDates.forEach(oDate => {
+    if (!db.outcomes[oDate]) return;
     const dayRes = (db.days[oDate]?.results || []).filter(r => pickDateMatchesScrapeDate(r.date, oDate));
     const dayTally = buildTally(dayRes).filter(t => t.count >= 4 && !t.hasOpposition);
     if (dayTally.length === 0) return;
@@ -45016,9 +45028,10 @@ function render() {
   const weekStartStr = weekStart.getFullYear() + '-' + String(weekStart.getMonth()+1).padStart(2,'0') + '-' + String(weekStart.getDate()).padStart(2,'0');
 
   let weekW = 0, weekL = 0;
-  Object.entries(db.outcomes).forEach(([oDate, arr]) => {
+  // Scope weekly win rate to active dates
+  activeDates.forEach(oDate => {
     if (oDate >= weekStartStr) {
-      (Array.isArray(arr) ? arr : []).forEach(o => {
+      (Array.isArray(db.outcomes[oDate]) ? db.outcomes[oDate] : []).forEach(o => {
         if (o.outcome === 'WIN') weekW++;
         else if (o.outcome === 'LOSS') weekL++;
       });
@@ -45033,11 +45046,12 @@ function render() {
   document.getElementById('statTopStreak').textContent = topStreak.streak;
   document.getElementById('statTopStreakSub').textContent = topStreak.member;
 
-  // Overall Win Rate (outcomes are already pre-filtered to 4+ consensus at injection time)
-  const allOutcomes = Object.values(db.outcomes).flat();
-  const totalW = allOutcomes.filter(o => o.outcome === 'WIN').length;
-  const totalL = allOutcomes.filter(o => o.outcome === 'LOSS').length;
+  // Overall Win Rate - scoped to active dates
+  const scopedOutcomes = activeDates.flatMap(d => Array.isArray(db.outcomes[d]) ? db.outcomes[d] : []);
+  const totalW = scopedOutcomes.filter(o => o.outcome === 'WIN').length;
+  const totalL = scopedOutcomes.filter(o => o.outcome === 'LOSS').length;
   const totalGraded = totalW + totalL;
+  const scopeLabel = dateRangeMode ? 'selected range' : (activeDates.length === 1 ? formatDate(activeDates[0]) : 'all time');
   document.getElementById('statWinRate').textContent = totalGraded > 0 ? `${Math.round(totalW / totalGraded * 100)}%` : 'N/A';
   document.getElementById('statWinRate').className = 'value ' + (totalGraded > 0 && totalW/totalGraded >= 0.5 ? 'green' : totalGraded > 0 ? 'red' : '');
   document.getElementById('statWinRateSub').textContent = totalGraded > 0 ? `${totalW}W - ${totalL}L (💰 picks only)` : 'Tracks 💰 picks only';
@@ -45547,12 +45561,14 @@ function renderWinRateChart() {
   const leagues = ['NHL', 'NBA', 'MLB', 'NCAAB'];
   const wins = leagues.map(() => 0);
   const losses = leagues.map(() => 0);
-  // Outcomes are already pre-filtered to 4+ consensus at injection time
-  Object.values(db.outcomes).flat().forEach(o => {
-    const idx = leagues.indexOf(o.league);
-    if (idx === -1) return;
-    if (o.outcome === 'WIN') wins[idx]++;
-    else if (o.outcome === 'LOSS') losses[idx]++;
+  // Scope to active dates
+  currentActiveDates.forEach(d => {
+    (Array.isArray(db.outcomes[d]) ? db.outcomes[d] : []).forEach(o => {
+      const idx = leagues.indexOf(o.league);
+      if (idx === -1) return;
+      if (o.outcome === 'WIN') wins[idx]++;
+      else if (o.outcome === 'LOSS') losses[idx]++;
+    });
   });
   // Compute win rate percentages for labels
   const pcts = leagues.map((_, i) => {
