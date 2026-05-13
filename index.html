@@ -75,6 +75,8 @@ tr:hover td { background: #1c2128; }
 .badge.nba { background: rgba(210,153,34,0.15); color: #d29922; }
 .badge.mlb { background: rgba(63,185,80,0.15); color: #3fb950; }
 .badge.ncaab { background: rgba(188,140,255,0.15); color: #bc8cff; }
+.badge.wnba { background: rgba(255,107,157,0.15); color: #ff6b9d; }
+.badge.ncaaf { background: rgba(232,168,56,0.15); color: #e8a838; }
 .pick-bar { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; margin-bottom: 6px; }
 .pick-bar .name { font-size: 12px; color: #c9d1d9; }
 .pick-bar .detail { font-size: 11px; color: #8b949e; }
@@ -237,6 +239,7 @@ tr:hover td { background: #1c2128; }
         <button class="tab" onclick="switchLeague('nba',this)">🏀 NBA</button>
         <button class="tab" onclick="switchLeague('nhl',this)">🏒 NHL</button>
         <button class="tab" onclick="switchLeague('ncaab',this)">🏀 NCAAB</button>
+        <button class="tab" onclick="switchLeague('wnba',this)">🏀 WNBA</button>
       </div>
       <div id="liveScores" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
       <div id="scoresExpandBtn" style="display:none;text-align:center;margin-top:8px">
@@ -57146,7 +57149,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "May 13, 2026 at 9:04 AM EST"
+    "lastUpdated": "May 13, 2026 at 9:51 AM EST"
   }
 };
 
@@ -57489,7 +57492,7 @@ function pickDateMatchesScrapeDate(pickDate, scrapeDate) {
   return normalized === scrapeDate;
 }
 
-const LEAGUE_COLORS = { NHL: '#58a6ff', NBA: '#d29922', MLB: '#3fb950', NCAAB: '#bc8cff' };
+const LEAGUE_COLORS = { NHL: '#58a6ff', NBA: '#d29922', MLB: '#3fb950', NCAAB: '#bc8cff', WNBA: '#ff6b9d', NCAAF: '#e8a838' };
 
 function leagueBadge(league) {
   return `<span class="badge ${(league||'').toLowerCase()}" style="font-size:10px;margin-right:4px">${league}</span>`;
@@ -57892,20 +57895,22 @@ function togglePickCountRows() {
 }
 
 function renderWinRateChart() {
-  const leagues = ['NHL', 'NBA', 'MLB', 'NCAAB'];
-  const wins = leagues.map(() => 0);
-  const losses = leagues.map(() => 0);
-  // Scope to active dates
+  // Dynamically discover all leagues from outcomes data
+  const leagueStats = {};
   currentActiveDates.forEach(d => {
     (Array.isArray(db.outcomes[d]) ? db.outcomes[d] : []).forEach(o => {
-      const idx = leagues.indexOf(o.league);
-      if (idx === -1) return;
-      if (o.outcome === 'WIN') wins[idx]++;
-      else if (o.outcome === 'LOSS') losses[idx]++;
+      if (!o.league) return;
+      if (!leagueStats[o.league]) leagueStats[o.league] = { wins: 0, losses: 0 };
+      if (o.outcome === 'WIN') leagueStats[o.league].wins++;
+      else if (o.outcome === 'LOSS') leagueStats[o.league].losses++;
     });
   });
+  // Sort leagues by total picks descending
+  const leagues = Object.keys(leagueStats).sort((a, b) => (leagueStats[b].wins + leagueStats[b].losses) - (leagueStats[a].wins + leagueStats[a].losses));
+  const wins = leagues.map(lg => leagueStats[lg].wins);
+  const losses = leagues.map(lg => leagueStats[lg].losses);
   // Compute win rate percentages for labels
-  const pcts = leagues.map((_, i) => {
+  const pcts = leagues.map((lg, i) => {
     const total = wins[i] + losses[i];
     return total > 0 ? Math.round(wins[i] / total * 100) + '%' : 'N/A';
   });
@@ -57951,7 +57956,9 @@ const ESPN_BASE = {
   mlb: 'https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard',
   nba: 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard',
   nhl: 'https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard',
-  ncaab: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard'
+  ncaab: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard',
+  wnba: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard',
+  ncaaf: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard'
 };
 
 function getEspnUrl(league) {
