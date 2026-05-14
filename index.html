@@ -58846,7 +58846,7 @@ const SEED_DATA = {
     "2026-05-13": []
   },
   "meta": {
-    "lastUpdated": "May 14, 2026 at 2:19 PM EST"
+    "lastUpdated": "May 14, 2026 at 2:22 PM EST"
   }
 };
 
@@ -59719,16 +59719,13 @@ async function fetchScores() {
   const statusOrder = { 'STATUS_IN_PROGRESS': 0, 'STATUS_HALFTIME': 0, 'STATUS_SCHEDULED': 1, 'STATUS_FINAL': 2, 'STATUS_POSTPONED': 3 };
   events.sort((a, b) => (statusOrder[a.status?.type?.name] ?? 1) - (statusOrder[b.status?.type?.name] ?? 1));
 
-  // BetMGM sport page URLs by league
-  const betmgmPaths = {
-    mlb: 'https://sports.betmgm.com/en/sports/baseball-23/betting/usa-9/mlb-75',
-    nba: 'https://sports.betmgm.com/en/sports/basketball-7/betting/usa-9/nba-6',
-    nhl: 'https://sports.betmgm.com/en/sports/ice-hockey-12/betting/usa-9/nhl-34',
-    ncaab: 'https://sports.betmgm.com/en/sports/basketball-7/betting/usa-9/ncaa-264',
-    wnba: 'https://sports.betmgm.com/en/sports/basketball-7/betting/usa-9/wnba-213',
-    ncaaf: 'https://sports.betmgm.com/en/sports/football-11/betting/usa-9/college-football-211'
-  };
-  const betLink = betmgmPaths[currentLeague] || 'https://sports.betmgm.com';
+  // BetMGM event page URL - build from team names
+  // Pattern: https://www.nj.betmgm.com/en/sports/events/{away-slug}-at-{home-slug}
+  function buildBetMGMLink(awayName, homeName) {
+    if (!awayName || !homeName) return 'https://sports.betmgm.com';
+    const slugify = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return 'https://sports.betmgm.com/en/sports/events/' + slugify(awayName) + '-at-' + slugify(homeName);
+  }
 
   container.innerHTML = events.map(ev => {
     const comp = ev.competitions?.[0] || {};
@@ -59748,6 +59745,7 @@ async function fetchScores() {
     const statusClass = status === 'STATUS_IN_PROGRESS' ? 'live' : status === 'STATUS_FINAL' ? 'final' : 'pre';
     const statusText = status === 'STATUS_IN_PROGRESS' ? detail : status === 'STATUS_FINAL' ? 'Final' : detail || 'Scheduled';
     const gameId = ev.id || '';
+    const betLink = buildBetMGMLink(awayName, homeName);
 
     return '<a href="' + betLink + '" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;display:block">' +
       '<div class="score-card" style="cursor:pointer">' +
