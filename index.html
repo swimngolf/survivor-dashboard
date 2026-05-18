@@ -63469,16 +63469,7 @@ const SEED_DATA = {
     }
   },
   "outcomes": {
-    "2026-04-02": [
-      {
-        "pick": "LAL +9.5",
-        "league": "NBA",
-        "game": "L.A. Lakers vs Oklahoma City",
-        "outcome": "LOSS",
-        "score": "96-139",
-        "pickCount": 5
-      }
-    ],
+    "2026-04-02": [],
     "2026-04-03": [
       {
         "pick": "ATL -115",
@@ -63777,14 +63768,6 @@ const SEED_DATA = {
         "outcome": "WIN",
         "score": "135-103",
         "pickCount": 4
-      },
-      {
-        "pick": "LAD -125",
-        "league": "MLB",
-        "game": "Texas vs LA Dodgers",
-        "outcome": "LOSS",
-        "score": "5-2",
-        "pickCount": 5
       }
     ],
     "2026-04-13": [
@@ -63805,14 +63788,6 @@ const SEED_DATA = {
         "outcome": "LOSS",
         "score": "114-110",
         "pickCount": 7
-      },
-      {
-        "pick": "MIL -125",
-        "league": "MLB",
-        "game": "Toronto vs Milwaukee",
-        "outcome": "LOSS",
-        "score": "9-7",
-        "pickCount": 5
       }
     ],
     "2026-04-15": [
@@ -63886,14 +63861,6 @@ const SEED_DATA = {
         "outcome": "WIN",
         "score": "2-1",
         "pickCount": 14
-      },
-      {
-        "pick": "MIL -122",
-        "league": "MLB",
-        "game": "Milwaukee vs Miami",
-        "outcome": "LOSS",
-        "score": "3-5",
-        "pickCount": 5
       },
       {
         "pick": "Over 221.5",
@@ -64010,14 +63977,6 @@ const SEED_DATA = {
         "outcome": "WIN",
         "score": "4-0",
         "pickCount": 5
-      },
-      {
-        "pick": "SA -11.5",
-        "league": "NBA",
-        "game": "Portland vs San Antonio",
-        "outcome": "LOSS",
-        "score": "106-103",
-        "pickCount": 5
       }
     ],
     "2026-04-22": [
@@ -64027,14 +63986,6 @@ const SEED_DATA = {
         "game": "Pittsburgh vs Texas",
         "outcome": "WIN",
         "score": "8-4",
-        "pickCount": 5
-      },
-      {
-        "pick": "DET -9.5",
-        "league": "NBA",
-        "game": "Orlando vs Detroit",
-        "outcome": "WIN",
-        "score": "83-98",
         "pickCount": 5
       },
       {
@@ -64361,14 +64312,6 @@ const SEED_DATA = {
         "outcome": "WIN",
         "score": "1-2",
         "pickCount": 9
-      },
-      {
-        "pick": "TOR -106",
-        "league": "MLB",
-        "game": "Toronto vs Minnesota",
-        "outcome": "LOSS",
-        "score": "3-4",
-        "pickCount": 5
       }
     ],
     "2026-05-04": [
@@ -64465,14 +64408,6 @@ const SEED_DATA = {
         "pickCount": 4
       },
       {
-        "pick": "NY -7.5",
-        "league": "NBA",
-        "game": "Philadelphia vs New York",
-        "outcome": "LOSS",
-        "score": "102-108",
-        "pickCount": 5
-      },
-      {
         "pick": "MIA -120",
         "league": "MLB",
         "game": "Baltimore vs Miami",
@@ -64539,14 +64474,6 @@ const SEED_DATA = {
         "outcome": "WIN",
         "score": "115-108",
         "pickCount": 4
-      },
-      {
-        "pick": "Under 6.0",
-        "league": "NHL",
-        "game": "Montreal vs Buffalo",
-        "outcome": "PUSH",
-        "score": "5-1",
-        "pickCount": 5
       },
       {
         "pick": "CIN -130",
@@ -64633,14 +64560,6 @@ const SEED_DATA = {
         "outcome": "WIN",
         "score": "3-1",
         "pickCount": 6
-      },
-      {
-        "pick": "Over 7.5",
-        "league": "MLB",
-        "game": "LA Angels vs Cleveland",
-        "outcome": "WIN",
-        "score": "2-7",
-        "pickCount": 5
       }
     ],
     "2026-05-12": [
@@ -64865,7 +64784,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "May 18, 2026 at 9:07 AM EST"
+    "lastUpdated": "May 18, 2026 at 9:31 AM EST"
   }
 };
 
@@ -65194,10 +65113,10 @@ function buildTally(results) {
 
 // A pick qualifies as a 💰 pick if:
 // - 4+ picks with 0 opposing picks, OR
-// - 5+ picks with 1 or fewer opposing picks
+// - 6+ picks with 1 or fewer opposing picks
 function isQualifiedPick(t) {
   if (t.count >= 4 && t.oppositeCount === 0) return true;
-  if (t.count >= 5 && t.oppositeCount <= 1) return true;
+  if (t.count >= 6 && t.oppositeCount <= 1) return true;
   return false;
 }
 
