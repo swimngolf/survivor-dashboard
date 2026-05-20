@@ -67657,7 +67657,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "May 20, 2026 at 3:11 PM EST"
+    "lastUpdated": "May 20, 2026 at 3:14 PM EST"
   }
 };
 
@@ -67822,8 +67822,8 @@ function render() {
   document.getElementById('statScope').textContent = `${results.length} today, ${futurePicks.length} future`;
 
   const tally = buildTally(results);
-  // Most popular pick: skip picks with conflicting sides
-  const topPick = tally.find(t => isQualifiedPick(t)) || null;
+  // Most popular pick: must have 0 opposing picks AND meet base criteria (4+, rank<=50)
+  const topPick = tally.find(t => t.count >= 4 && t.oppositeCount === 0 && t.bestRank <= 50) || null;
   document.getElementById('statTopPick').textContent = topPick ? topPick.pick : '--';
 
   // Determine active date scope for stats
@@ -67845,7 +67845,7 @@ function render() {
   activeDates.forEach(oDate => {
     if (!db.outcomes[oDate]) return;
     const dayRes = (db.days[oDate]?.results || []).filter(r => pickDateMatchesScrapeDate(r.date, oDate));
-    const dayTally = buildTally(dayRes).filter(t => isQualifiedPick(t));
+    const dayTally = buildTally(dayRes).filter(t => t.count >= 4 && t.oppositeCount === 0 && t.bestRank <= 50);
     if (dayTally.length === 0) return;
     const dayTop = dayTally[0];
     const oc = Array.isArray(db.outcomes[oDate]) ? db.outcomes[oDate] : [];
