@@ -70023,7 +70023,7 @@ const SEED_DATA = {
     ]
   },
   "meta": {
-    "lastUpdated": "May 22, 2026 at 9:04 AM EST"
+    "lastUpdated": "May 22, 2026 at 9:06 AM EST"
   }
 };
 
@@ -70673,7 +70673,7 @@ function renderOutcomeHistory() {
     const losses = enriched.filter(o => o.outcome === 'LOSS').length;
     const total = wins + losses;
     const wr = total > 0 ? `${Math.round(wins/total*100)}%` : 'N/A';
-    const tallyTop = tally4[0];
+    const tallyTop = tally4.find(t => t.oppositeCount === 0) || null;
     let topPickCell = '--';
     if (tallyTop) {
       const tNorm = normalizePick(tallyTop.pick);
@@ -70695,7 +70695,7 @@ function renderOutcomeHistory() {
       bPicks += enriched.length;
       bWins += enriched.filter(o => o.outcome === 'WIN').length;
       bLosses += enriched.filter(o => o.outcome === 'LOSS').length;
-      const tallyTop = tally4[0];
+      const tallyTop = tally4.find(t => t.oppositeCount === 0) || null;
       if (tallyTop && tallyTop.count > bestCount) {
         bestCount = tallyTop.count;
         const tNorm = normalizePick(tallyTop.pick);
