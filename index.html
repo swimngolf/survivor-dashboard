@@ -81381,10 +81381,12 @@ const SEED_DATA = {
       }
     ],
     "scrapeDate": "2026-05-29",
-    "count": 35
+    "count": 35,
+    "totalWins": 0,
+    "totalLosses": 0
   },
   "meta": {
-    "lastUpdated": "May 29, 2026 at 3:38 PM EST"
+    "lastUpdated": "May 29, 2026 at 3:40 PM EST"
   }
 };
 
@@ -82359,15 +82361,26 @@ function renderMonthly() {
     return;
   }
   empty.style.display = 'none';
+
+  // Show aggregate win/loss stats
+  const header = document.querySelector('#monthlyTable').parentElement.querySelector('h2');
+  const totalW = db.monthly.totalWins || 0;
+  const totalL = db.monthly.totalLosses || 0;
+  const totalGraded = totalW + totalL;
+  const pct = totalGraded > 0 ? Math.round(totalW / totalGraded * 100) : 0;
+  const statsSpan = totalGraded > 0 ? ` <span style="font-size:13px;color:${pct >= 50 ? '#3fb950' : '#f85149'};font-weight:600;margin-left:8px">${totalW}W-${totalL}L (${pct}%)</span>` : '';
+  header.innerHTML = `📅 Monthly Leaders - Pending Picks${statsSpan}`;
+
   const results = db.monthly.results.filter(r => r.pick && r.pick !== 'ERROR' && r.pick !== 'NO_PENDING');
   tbody.innerHTML = results.map(r => {
     const leagueClass = (r.league || '').toLowerCase();
+    const outcomeBadge = r.outcome && r.outcome !== 'PENDING' ? ` <span class="badge ${r.outcome === 'WIN' ? 'win' : 'loss'}">${r.outcome}</span>` : '';
     return `<tr>
       <td>${r.rank}</td>
       <td><strong>${r.member}</strong></td>
       <td>${r.record || ''}</td>
       <td>${r.pct || ''}</td>
-      <td><span class="badge ${leagueClass}" style="font-size:10px;margin-right:4px">${r.league || ''}</span>${r.pick}</td>
+      <td><span class="badge ${leagueClass}" style="font-size:10px;margin-right:4px">${r.league || ''}</span>${r.pick}${outcomeBadge}</td>
       <td>${r.game || ''}</td>
     </tr>`;
   }).join('');
