@@ -354,6 +354,7 @@ function seedData() {
     Object.keys(SEED_DATA.outcomes || {}).forEach(date => {
       db.outcomes[date] = SEED_DATA.outcomes[date];
     });
+    if (SEED_DATA.monthly) db.monthly = SEED_DATA.monthly;
     db.meta.lastUpdated = SEED_DATA.meta?.lastUpdated || db.meta.lastUpdated;
     saveDB(db);
   }
@@ -81460,7 +81461,7 @@ const SEED_DATA = {
     "totalLosses": 0
   },
   "meta": {
-    "lastUpdated": "May 29, 2026 at 4:09 PM EST"
+    "lastUpdated": "May 29, 2026 at 4:24 PM EST"
   }
 };
 
