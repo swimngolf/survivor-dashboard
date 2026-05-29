@@ -81386,7 +81386,7 @@ const SEED_DATA = {
     "totalLosses": 0
   },
   "meta": {
-    "lastUpdated": "May 29, 2026 at 3:42 PM EST"
+    "lastUpdated": "May 29, 2026 at 3:45 PM EST"
   }
 };
 
@@ -82371,16 +82371,27 @@ function renderMonthly() {
   const statsSpan = totalGraded > 0 ? ` <span style="font-size:13px;color:${pct >= 50 ? '#3fb950' : '#f85149'};font-weight:600;margin-left:8px">${totalW}W-${totalL}L (${pct}%)</span>` : '';
   header.innerHTML = `📅 Monthly Leaders - Pending Picks${statsSpan}`;
 
+  // Build today's qualified picks for cross-reference
+  const date = getCurrentDate();
+  const dayData = db.days[date];
+  const todayResults = dayData ? (dayData.results || []).filter(r => pickDateMatchesScrapeDate(r.date, date)) : [];
+  const todayTally = buildTally(todayResults);
+  const qualifiedPicks = todayTally.filter(t => isQualifiedPick(t));
+
   const results = db.monthly.results.filter(r => r.pick && r.pick !== 'ERROR' && r.pick !== 'NO_PENDING');
   tbody.innerHTML = results.map(r => {
     const leagueClass = (r.league || '').toLowerCase();
     const outcomeBadge = r.outcome && r.outcome !== 'PENDING' ? ` <span class="badge ${r.outcome === 'WIN' ? 'win' : 'loss'}">${r.outcome}</span>` : '';
+    // Check if this pick matches a qualified pick in today's distribution
+    const rNorm = normalizePick(r.pick);
+    const matchesQualified = qualifiedPicks.find(q => normalizePick(q.pick).key === rNorm.key && gamesMatch(q.game, r.game));
+    const moneyBag = matchesQualified ? ' 💰' : '';
     return `<tr>
       <td>${r.rank}</td>
       <td><strong>${r.member}</strong></td>
       <td>${r.record || ''}</td>
       <td>${r.pct || ''}</td>
-      <td><span class="badge ${leagueClass}" style="font-size:10px;margin-right:4px">${r.league || ''}</span>${r.pick}${outcomeBadge}</td>
+      <td><span class="badge ${leagueClass}" style="font-size:10px;margin-right:4px">${r.league || ''}</span>${r.pick}${moneyBag}${outcomeBadge}</td>
       <td>${r.game || ''}</td>
     </tr>`;
   }).join('');
@@ -82415,7 +82426,7 @@ function submitWaitlist(e) {
 <div class="container" style="margin-top:24px">
   <div class="panel">
     <h2>📅 Monthly Leaders - Pending Picks</h2>
-    <p style="font-size:11px;color:#8b949e;margin:-4px 0 10px 0">Tracking picks from the top monthly performers. Data collected for future model integration.</p>
+    <p style="font-size:11px;color:#8b949e;margin:-4px 0 10px 0">Tracking picks from the top monthly performers. Data collected for future model integration. 💰 = Pick also qualifies in today's Pick Distribution algorithm.</p>
     <table id="monthlyTable">
       <thead><tr><th>Rank</th><th>Member</th><th>Record</th><th>Win %</th><th>Pick</th><th>Game</th></tr></thead>
       <tbody id="monthlyBody"></tbody>
