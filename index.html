@@ -80570,8 +80570,9 @@ const SEED_DATA = {
       }
     ]
   },
+  "monthly": null,
   "meta": {
-    "lastUpdated": "May 29, 2026 at 3:06 PM EST"
+    "lastUpdated": "May 29, 2026 at 3:37 PM EST"
   }
 };
 
@@ -80825,6 +80826,7 @@ function render() {
   renderOutcomeHistory();
   renderPickCountStats();
   renderWinRateChart();
+  renderMonthly();
 }
 
 // Normalize a pick string to group similar picks (same team/direction, different lines)
@@ -81535,6 +81537,30 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
+// Render monthly leaderboard section
+function renderMonthly() {
+  const tbody = document.getElementById('monthlyBody');
+  const empty = document.getElementById('emptyMonthly');
+  if (!db.monthly || !db.monthly.results || db.monthly.results.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  const results = db.monthly.results.filter(r => r.pick && r.pick !== 'ERROR' && r.pick !== 'NO_PENDING');
+  tbody.innerHTML = results.map(r => {
+    const leagueClass = (r.league || '').toLowerCase();
+    return `<tr>
+      <td>${r.rank}</td>
+      <td><strong>${r.member}</strong></td>
+      <td>${r.record || ''}</td>
+      <td>${r.pct || ''}</td>
+      <td><span class="badge ${leagueClass}" style="font-size:10px;margin-right:4px">${r.league || ''}</span>${r.pick}</td>
+      <td>${r.game || ''}</td>
+    </tr>`;
+  }).join('');
+}
+
 // Waitlist form submission
 function submitWaitlist(e) {
   e.preventDefault();
@@ -81559,6 +81585,19 @@ function submitWaitlist(e) {
   return false;
 }
 </script>
+
+<!-- Monthly Leaders Section -->
+<div class="container" style="margin-top:24px">
+  <div class="panel">
+    <h2>📅 Monthly Leaders - Pending Picks</h2>
+    <p style="font-size:11px;color:#8b949e;margin:-4px 0 10px 0">Tracking picks from the top monthly performers on Covers Survivor. Data collected for future model integration.</p>
+    <table id="monthlyTable">
+      <thead><tr><th>Rank</th><th>Member</th><th>Record</th><th>Win %</th><th>Pick</th><th>Game</th></tr></thead>
+      <tbody id="monthlyBody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyMonthly"><p>Monthly data will appear after the next scrape run.</p></div>
+  </div>
+</div>
 
 <!-- Premium Coming Soon -->
 <div style="max-width:600px;margin:32px auto 0;padding:28px 24px;background:linear-gradient(135deg,#1a1f2e,#0d1117);border:1px solid #30363d;border-radius:12px;text-align:center">
