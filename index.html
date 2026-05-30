@@ -326,6 +326,19 @@ tr:hover td { background: #1c2128; }
 
 <div id="loadStatus">Loading data...</div>
 
+<!-- Monthly Leaders Section -->
+<div class="container" style="margin-top:24px">
+  <div class="panel">
+    <h2>📅 Monthly Leaders - Pending Picks</h2>
+    <p style="font-size:11px;color:#8b949e;margin:-4px 0 10px 0">Tracking picks from the top monthly performers. Data collected for future model integration. 💰 = Pick also qualifies in today's Pick Distribution algorithm.</p>
+    <table id="monthlyTable">
+      <thead><tr><th>Rank</th><th>Member</th><th>Record</th><th>Win %</th><th>Pick</th><th>Game</th></tr></thead>
+      <tbody id="monthlyBody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyMonthly"><p>Monthly data will appear after the next scrape run.</p></div>
+  </div>
+</div>
+
 <script>
 // ============================================================
 // DATA STORE - embedded data + localStorage for persistence
@@ -82221,7 +82234,7 @@ const SEED_DATA = {
     "totalLosses": 6
   },
   "meta": {
-    "lastUpdated": "May 30, 2026 at 8:05 AM EST"
+    "lastUpdated": "May 30, 2026 at 8:30 AM EST"
   }
 };
 
@@ -83256,19 +83269,6 @@ function submitWaitlist(e) {
   return false;
 }
 </script>
-
-<!-- Monthly Leaders Section -->
-<div class="container" style="margin-top:24px">
-  <div class="panel">
-    <h2>📅 Monthly Leaders - Pending Picks</h2>
-    <p style="font-size:11px;color:#8b949e;margin:-4px 0 10px 0">Tracking picks from the top monthly performers. Data collected for future model integration. 💰 = Pick also qualifies in today's Pick Distribution algorithm.</p>
-    <table id="monthlyTable">
-      <thead><tr><th>Rank</th><th>Member</th><th>Record</th><th>Win %</th><th>Pick</th><th>Game</th></tr></thead>
-      <tbody id="monthlyBody"></tbody>
-    </table>
-    <div class="empty-state" id="emptyMonthly"><p>Monthly data will appear after the next scrape run.</p></div>
-  </div>
-</div>
 
 <!-- Premium Coming Soon -->
 <div style="max-width:600px;margin:32px auto 0;padding:28px 24px;background:linear-gradient(135deg,#1a1f2e,#0d1117);border:1px solid #30363d;border-radius:12px;text-align:center">
