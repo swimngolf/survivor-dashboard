@@ -84885,7 +84885,7 @@ const SEED_DATA = {
     "totalLosses": 11
   },
   "meta": {
-    "lastUpdated": "Jun 1, 2026 at 11:03 AM EST"
+    "lastUpdated": "Jun 1, 2026 at 11:15 AM EST"
   }
 };
 
@@ -85854,21 +85854,22 @@ if ('serviceWorker' in navigator) {
 function renderMonthly() {
   const tbody = document.getElementById('monthlyBody');
   const empty = document.getElementById('emptyMonthly');
+
+  // Always show aggregate win/loss stats in the header
+  const header = document.querySelector('#monthlyTable').parentElement.querySelector('h2');
+  const totalW = db.monthly?.totalWins || 0;
+  const totalL = db.monthly?.totalLosses || 0;
+  const totalGraded = totalW + totalL;
+  const pct = totalGraded > 0 ? Math.round(totalW / totalGraded * 100) : 0;
+  const statsSpan = totalGraded > 0 ? ` <span style="font-size:13px;color:${pct >= 50 ? '#3fb950' : '#f85149'};font-weight:600;margin-left:8px">${totalW}W-${totalL}L (${pct}%)</span>` : '';
+  header.innerHTML = `📅 Monthly Leaders - Pending Picks${statsSpan}`;
+
   if (!db.monthly || !db.monthly.results || db.monthly.results.length === 0) {
     tbody.innerHTML = '';
     empty.style.display = 'block';
     return;
   }
   empty.style.display = 'none';
-
-  // Show aggregate win/loss stats
-  const header = document.querySelector('#monthlyTable').parentElement.querySelector('h2');
-  const totalW = db.monthly.totalWins || 0;
-  const totalL = db.monthly.totalLosses || 0;
-  const totalGraded = totalW + totalL;
-  const pct = totalGraded > 0 ? Math.round(totalW / totalGraded * 100) : 0;
-  const statsSpan = totalGraded > 0 ? ` <span style="font-size:13px;color:${pct >= 50 ? '#3fb950' : '#f85149'};font-weight:600;margin-left:8px">${totalW}W-${totalL}L (${pct}%)</span>` : '';
-  header.innerHTML = `📅 Monthly Leaders - Pending Picks${statsSpan}`;
 
   // Build today's qualified picks for cross-reference
   const date = getCurrentDate();
