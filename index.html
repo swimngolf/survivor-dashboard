@@ -78,6 +78,7 @@ tr:hover td { background: #1c2128; }
 .badge.wnba { background: rgba(255,107,157,0.15); color: #ff6b9d; }
 .badge.ncaaf { background: rgba(232,168,56,0.15); color: #e8a838; }
 .badge.cfl { background: rgba(255,140,66,0.15); color: #ff8c42; }
+.badge.nfl { background: rgba(77,184,255,0.15); color: #4db8ff; }
 .pick-bar { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 10px; margin-bottom: 6px; }
 .pick-bar .name { font-size: 12px; color: #c9d1d9; }
 .pick-bar .detail { font-size: 11px; color: #8b949e; }
@@ -242,6 +243,7 @@ tr:hover td { background: #1c2128; }
         <button class="tab" onclick="switchLeague('ncaab',this)">🏀 NCAAB</button>
         <button class="tab" onclick="switchLeague('wnba',this)">🏀 WNBA</button>
         <button class="tab" onclick="switchLeague('cfl',this)">🏈 CFL</button>
+        <button class="tab" onclick="switchLeague('nfl',this)">🏈 NFL</button>
       </div>
       <div id="liveScores" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px"></div>
       <div id="scoresExpandBtn" style="display:none;text-align:center;margin-top:8px">
@@ -176175,7 +176177,7 @@ const SEED_DATA = {
     "totalLosses": 386
   },
   "meta": {
-    "lastUpdated": "Aug 7, 2026 at 10:05 AM EST"
+    "lastUpdated": "Aug 7, 2026 at 10:24 AM EST"
   }
 };
 
@@ -176539,7 +176541,7 @@ function pickDateMatchesScrapeDate(pickDate, scrapeDate) {
   return normalized === scrapeDate;
 }
 
-const LEAGUE_COLORS = { NHL: '#58a6ff', NBA: '#d29922', MLB: '#3fb950', NCAAB: '#bc8cff', WNBA: '#ff6b9d', NCAAF: '#e8a838', CFL: '#ff8c42' };
+const LEAGUE_COLORS = { NHL: '#58a6ff', NBA: '#d29922', MLB: '#3fb950', NCAAB: '#bc8cff', WNBA: '#ff6b9d', NCAAF: '#e8a838', CFL: '#ff8c42', NFL: '#4db8ff' };
 
 function leagueBadge(league) {
   return `<span class="badge ${(league||'').toLowerCase()}" style="font-size:10px;margin-right:4px">${league}</span>`;
@@ -177013,7 +177015,8 @@ const ESPN_BASE = {
   ncaab: 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard',
   wnba: 'https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard',
   ncaaf: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard',
-  cfl: 'https://site.api.espn.com/apis/site/v2/sports/football/cfl/scoreboard'
+  cfl: 'https://site.api.espn.com/apis/site/v2/sports/football/cfl/scoreboard',
+  nfl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'
 };
 
 function getEspnUrl(league) {
