@@ -242,6 +242,7 @@ tr:hover td { background: #1c2128; }
         <button class="tab" onclick="switchLeague('nhl',this)">🏒 NHL</button>
         <button class="tab" onclick="switchLeague('ncaab',this)">🏀 NCAAB</button>
         <button class="tab" onclick="switchLeague('wnba',this)">🏀 WNBA</button>
+        <button class="tab" onclick="switchLeague('ncaaf',this)">🏈 NCAAF</button>
         <button class="tab" onclick="switchLeague('cfl',this)">🏈 CFL</button>
         <button class="tab" onclick="switchLeague('nfl',this)">🏈 NFL</button>
       </div>
@@ -208645,11 +208646,11 @@ const SEED_DATA = {
     ],
     "2026-08-31": [
       {
-        "pick": "MIA -118",
+        "pick": "MIA -104",
         "league": "MLB",
         "game": "Miami vs Washington",
         "outcome": "LOSS",
-        "score": "3-6",
+        "score": "4-5",
         "pickCount": 4
       }
     ]
@@ -209336,11 +209337,11 @@ const SEED_DATA = {
     ],
     "scrapeDate": "2026-09-01",
     "count": 25,
-    "totalWins": 531,
-    "totalLosses": 532
+    "totalWins": 534,
+    "totalLosses": 535
   },
   "meta": {
-    "lastUpdated": "Sep 1, 2026 at 10:36 AM EST"
+    "lastUpdated": "Sep 1, 2026 at 10:44 AM EST"
   }
 };
 
@@ -210185,10 +210186,12 @@ const ESPN_BASE = {
 function getEspnUrl(league) {
   const base = ESPN_BASE[league];
   const date = getCurrentDate();
+  // NCAAF default endpoint only returns Top 25 games. groups=90 = all FBS+FCS, limit=300 = all games
+  const extra = (league === 'ncaaf') ? '&groups=90&limit=300' : '';
   if (date) {
-    return base + '?dates=' + date.replace(/-/g, '');
+    return base + '?dates=' + date.replace(/-/g, '') + extra;
   }
-  return base;
+  return extra ? base + '?' + extra.slice(1) : base;
 }
 
 function toggleLiveScores() {
